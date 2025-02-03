@@ -1,0 +1,4 @@
+plugins:
+  x_chat_customisations_enabled:
+    default: true
+    client: true
