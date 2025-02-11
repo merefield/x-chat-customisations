@@ -37,7 +37,7 @@ module ChatCustomisations
         WITH eligible_users AS (
           SELECT DISTINCT u.id, uo.allow_private_messages
           FROM users u
-          JOIN user_options uo ON uo.user_id = u.id 
+          JOIN user_options uo ON uo.user_id = u.id#{' '}
           #{groups_join_sql}
           WHERE u.last_seen_at < now() - interval '15 minutes'
           AND uo.chat_enabled
