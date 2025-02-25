@@ -16,6 +16,6 @@ require_relative "lib/chat_customisations/engine"
 after_initialize do
   reloadable_patch do
     Chat::Mailer.singleton_class.prepend(ChatCustomisations::ChatMailerExtension)
-    Jobs::UserEmail.singleton_class.prepend(ChatCustomisations::UserEmailJobExtension)
+    Jobs::UserEmail.prepend(ChatCustomisations::UserEmailJobExtension)
   end
 end
