@@ -2,3 +2,6 @@ plugins:
   x_chat_customisations_enabled:
     default: true
     client: true
+  x_chat_customisations_chat_summary_emails_enabled:
+    default: true
+    client: true
