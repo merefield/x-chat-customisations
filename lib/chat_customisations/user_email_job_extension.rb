@@ -24,6 +24,12 @@ module ChatCustomisations
         return SkippedEmailLog.create!(attributes)
       end
 
+      # CORE BUG: if we don't set to_address, ultimately the email won't send and will be skipped.
+      # This is a core bug and we will need to raise it on Meta.
+      if args[:to_address].blank? && user&.primary_email&.email
+        args[:to_address] = user&.primary_email&.email
+      end
+
       #now pass back control
       super
     end
