@@ -1,0 +1,8 @@
+en:
+  site_settings:
+    x_chat_customisations_enabled: "Enable the workflow plugin"
+    x_chat_customisations_enhanced_logging: "Enable enhanced logging"
+    x_chat_customisations_chat_summary_emails_enabled: "Enable chat summary emails"
+  x_chat_customisations:
+    custom_reasons:
+      chat_summary_emails_disabled: "Chat Summary emails are disabled"

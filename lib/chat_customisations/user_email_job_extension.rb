@@ -3,12 +3,14 @@ module ChatCustomisations
   module UserEmailJobExtension
     def send_user_email(args)
 
-      ##TODO remove this temporary logging
-      user = User.find_by(id: args[:user_id])
-      to_address =
-          args[:to_address].presence || user&.primary_email&.email.presence || "no_email_found"
-      message = "Chat Customisations: send_user_email called with args: #{args}, user email: #{user.primary_email.email}, to_address: #{to_address} on #{ENV["DISCOURSE_HOSTNAME"]}"
-      Rails.logger.warn("#{message}")
+      # Consider removal if no longer used
+      if SiteSetting.x_chat_customisations_enhanced_logging
+        user = User.find_by(id: args[:user_id])
+        to_address =
+            args[:to_address].presence || user&.primary_email&.email.presence || "no_email_found"
+        message = "Chat Customisations: send_user_email called with args: #{args}, user email: #{user.primary_email.email}, to_address: #{to_address} on #{ENV["DISCOURSE_HOSTNAME"]}"
+        Rails.logger.warn("#{message}")
+      end
 
       if args[:type] == "chat_summary" && !SiteSetting.x_chat_customisations_chat_summary_emails_enabled
         attributes = {
@@ -17,7 +19,7 @@ module ChatCustomisations
           user_id: args[:user_id],
           post_id: nil,
           reason_type: SkippedEmailLog.reason_types[:custom],
-          custom_reason: "Chat Summary emails are disabled"
+          custom_reason: I18n.t("x_chat_customisations.custom_reasons.chat_summary_emails_disabled"),
         }
         return SkippedEmailLog.create!(attributes)
       end

@@ -1,7 +1,10 @@
 plugins:
   x_chat_customisations_enabled:
     default: true
-    client: true
+    client: false
+  x_chat_customisations_enhanced_logging:
+    default: false
+    client: false
   x_chat_customisations_chat_summary_emails_enabled:
     default: true
-    client: true
+    client: false
