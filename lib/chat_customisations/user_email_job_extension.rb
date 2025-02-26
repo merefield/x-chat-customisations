@@ -27,5 +27,14 @@ module ChatCustomisations
       #now pass back control
       super
     end
+
+    def message_for_email(user, post, type, notification, args = nil)
+      if SiteSetting.x_chat_customisations_enhanced_logging
+        Rails.logger.warn("Chat Customisations: message_for_email called with user: #{user}, post: #{post}, type: #{type}, notification: #{notification}, args: #{args} on #{ENV["DISCOURSE_HOSTNAME"]}")
+      end
+
+      #now pass back control
+      super
+    end
   end
 end
