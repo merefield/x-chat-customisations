@@ -3,7 +3,7 @@
 # about: An extension to the Chat plugin that currently suppresses all emails when a user mentions @all
 # version: 0.0.7
 # authors: Robert Barrow
-# url: https://github.com/merefield/
+# url: https://github.com/merefield/x-chat-customisations
 
 enabled_site_setting :x_chat_customisations_enabled
 
