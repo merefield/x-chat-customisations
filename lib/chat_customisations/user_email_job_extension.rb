@@ -3,11 +3,11 @@ module ChatCustomisations
   module UserEmailJobExtension
     def send_user_email(args)
 
+      user = User.find_by(id: args[:user_id])
+      to_address =
+        args[:to_address].presence || user&.primary_email&.email.presence || "no_email_found"
       # Consider removal if no longer used
       if SiteSetting.x_chat_customisations_enhanced_logging
-        user = User.find_by(id: args[:user_id])
-        to_address =
-            args[:to_address].presence || user&.primary_email&.email.presence || "no_email_found"
         message = "Chat Customisations: send_user_email called with args: #{args}, user email: #{user.primary_email.email}, to_address: #{to_address} on #{ENV["DISCOURSE_HOSTNAME"]}"
         Rails.logger.warn("#{message}")
       end
