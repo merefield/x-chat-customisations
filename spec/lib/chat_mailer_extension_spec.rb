@@ -17,7 +17,7 @@ describe Chat::Mailer do
   fab!(:job) { :user_email }
   fab!(:args) { { type: :chat_summary, user_id: user.id, force_respect_seen_recently: true } }
   let(:args_json) do
-    { 
+    {
       "type" => "chat_summary",  # Use string instead of symbol
       "user_id" => user.id,      # Integer is fine
       "force_respect_seen_recently" => true # Boolean is fine
