@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'sidekiq/testing'
+
 describe Chat::Mailer do
   fab!(:user) { Fabricate(:user, last_seen_at: 1.hour.ago) }
   fab!(:user_1) { Fabricate(:user, last_seen_at: 1.hour.ago) }
@@ -14,6 +16,13 @@ describe Chat::Mailer do
   fab!(:followed_channel) { Fabricate(:category_channel) }
   fab!(:job) { :user_email }
   fab!(:args) { { type: :chat_summary, user_id: user.id, force_respect_seen_recently: true } }
+  let(:args_json) do
+    { 
+      "type" => "chat_summary",  # Use string instead of symbol
+      "user_id" => user.id,      # Integer is fine
+      "force_respect_seen_recently" => true # Boolean is fine
+    }
+  end
 
   before do
     SiteSetting.chat_enabled = true
@@ -25,6 +34,10 @@ describe Chat::Mailer do
       expect_enqueued_with(job:, args:) { described_class.send_unread_mentions_summary }
     }.to_not output.to_stderr_from_any_process
     expect(Jobs::UserEmail.jobs.size).to eq(1)
+  end
+
+  def expect_skipped_in_email_log
+    expect { Jobs::UserEmail.perform_async(args_json) }.to change { SkippedEmailLog.count }.by(1)
   end
 
   def expect_not_enqueued
@@ -76,6 +89,13 @@ describe Chat::Mailer do
       it "does not queue a chat summary when chat is globally disabled" do
         SiteSetting.chat_enabled = false
         expect_not_enqueued
+      end
+
+      it "does not queue a chat summary when this is disabled in the plugin" do
+        SiteSetting.x_chat_customisations_chat_summary_emails_enabled = false
+        Sidekiq::Testing.inline!
+        expect_skipped_in_email_log
+        Sidekiq::Testing.fake!
       end
 
       it "does not queue a chat summary email when user has chat disabled" do
