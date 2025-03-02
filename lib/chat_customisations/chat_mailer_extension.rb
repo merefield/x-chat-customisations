@@ -61,18 +61,27 @@ module ChatCustomisations
           AND (uccm.last_read_message_id IS NULL OR cm.first_unread_id > uccm.last_read_message_id)
           AND (uccm.last_unread_mention_when_emailed_id IS NULL OR cm.first_unread_id > uccm.last_unread_mention_when_emailed_id)
         ), unread_mentions AS (
-          SELECT DISTINCT uccm.user_id
-          FROM user_chat_channel_memberships uccm
-          JOIN chat_channels cc ON cc.id = uccm.chat_channel_id AND cc.deleted_at IS NULL AND cc.chatable_type = 'Category'
-          JOIN channel_messages cm ON cm.chat_channel_id = cc.id AND cm.sender_id <> uccm.user_id
-          JOIN eligible_users eu ON eu.id = uccm.user_id
-          JOIN chat_mentions mn ON mn.chat_message_id = cm.first_unread_id
-          JOIN chat_mention_notifications cmn ON cmn.chat_mention_id = mn.id
-          JOIN notifications n ON n.id = cmn.notification_id AND n.user_id = uccm.user_id AND NOT n.read
-          WHERE NOT uccm.muted
-          AND uccm.following
-          AND (uccm.last_read_message_id IS NULL OR cm.first_unread_id > uccm.last_read_message_id)
-          AND (uccm.last_unread_mention_when_emailed_id IS NULL OR cm.first_unread_id > uccm.last_unread_mention_when_emailed_id)
+          SELECT DISTINCT n.user_id
+          FROM notifications n
+          JOIN eligible_users eu ON eu.id = n.user_id
+          JOIN chat_mention_notifications cmn ON cmn.notification_id = n.id
+          JOIN chat_mentions mn ON mn.id = cmn.chat_mention_id
+          JOIN chat_messages cm ON cm.id = mn.chat_message_id
+            AND cm.deleted_at IS NULL
+            AND cm.thread_id IS NULL
+            AND NOT cm.created_by_sdk
+            AND cm.created_at > now() - interval '1 day'
+          JOIN users sender ON sender.id = cm.user_id
+          JOIN chat_channels cc ON cc.id = cm.chat_channel_id
+            AND cc.deleted_at IS NULL
+            AND cc.chatable_type = 'Category'
+          JOIN user_chat_channel_memberships uccm ON uccm.chat_channel_id = cc.id
+            AND uccm.user_id = n.user_id
+            AND NOT uccm.muted
+            AND uccm.following
+            AND (uccm.last_read_message_id IS NULL OR uccm.last_read_message_id < cm.id)
+            AND (uccm.last_unread_mention_when_emailed_id IS NULL OR uccm.last_unread_mention_when_emailed_id < cm.id)
+          WHERE NOT n.read
           AND (mn.type IS NULL OR mn.type <> 'Chat::AllMention')
         )
         SELECT user_id FROM unread_dms
