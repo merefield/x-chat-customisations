@@ -4,6 +4,5 @@ en:
     x_chat_customisations_enhanced_logging: "Enable enhanced logging"
     x_chat_customisations_chat_summary_emails_enabled: "Enable chat summary emails"
   x_chat_customisations:
-    title: "Chat Customisations"
     custom_reasons:
       chat_summary_emails_disabled: "Chat Summary emails are disabled"
