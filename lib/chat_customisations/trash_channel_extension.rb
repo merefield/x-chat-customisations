@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ChatCustomisations
   module TrashChannelExtension
     def enqueue_delete_channel_relations_job(channel:)
