@@ -8,3 +8,8 @@ plugins:
   x_chat_customisations_chat_summary_emails_enabled:
     default: true
     client: false
+  x_chat_customisations_private_chat_dummy_category_id:
+    type: category
+    client: true
+    default: 4
+
