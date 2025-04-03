@@ -15,7 +15,7 @@ export default {
             class extends Superclass {
               @service siteSettings;
 
-              @tracked categoryId = this.siteSettings.x_chat_customisations_private_chat_dummy_category_id; // property already exists, but let's add a default value.
+              @tracked categoryId = this.siteSettings.x_chat_customisations_channel_creation_default_category_id; // property already exists, but let's add a default value.
               @tracked category = Category.findById(this.categoryId);
               @tracked threadingEnabled = true;
               @tracked autoJoinUsers = false;
