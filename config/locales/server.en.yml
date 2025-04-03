@@ -3,6 +3,8 @@ en:
     x_chat_customisations_enabled: "Enable the x chat customisations plugin"
     x_chat_customisations_enhanced_logging: "Enable enhanced logging"
     x_chat_customisations_chat_summary_emails_enabled: "Enable chat summary emails"
+    x_chat_customisations_channel_creation_default_category_id: "Default category for new channels"
+    x_chat_customisations_private_chat_dummy_category_id: "Dummy category for private chat - selecting this will cause a new private category and group to be created, along with a new corresponding chat channel whose members will mirror the group."
   x_chat_customisations:
     custom_reasons:
       chat_summary_emails_disabled: "Chat Summary emails are disabled"
