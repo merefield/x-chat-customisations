@@ -14,7 +14,7 @@ module ChatCustomisations
         group.save!
         CategoryGroup.where(category_id: category.id).destroy_all
         cg = CategoryGroup.create!(category_id: category.id, group_id: group.id, permission_type: CategoryGroup.permission_types[:full])
-        gu = GroupUser.create!(group_id: group.id, user_id: current_user.id)
+        gu = GroupUser.create!(group_id: group.id, user_id: current_user.id, owner: true)
       end
       super
     end
