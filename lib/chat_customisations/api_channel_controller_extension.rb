@@ -7,7 +7,7 @@ module ChatCustomisations
         if Category.exists?(name: name) || Group.exists?(name: name)
           raise Discourse::InvalidParameters.new("A Category or Group with the name #{name} already exists, choose a different name")
         end
-        category = Category.new(name: name, user_id: current_user.id)
+        category = Category.new(name: name, user_id: current_user.id, read_restricted: true)
         category.save!
         params[:channel][:chatable_id] = category.id
         group = Group.new(name: name)
