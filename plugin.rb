@@ -14,6 +14,12 @@ end
 
 require_relative "lib/chat_customisations/engine"
 
+# {{icon "people-group"}}
+
+if respond_to?(:register_svg_icon)
+  register_svg_icon "people-group"
+end
+
 after_initialize do
   reloadable_patch do
     Chat::Mailer.singleton_class.prepend(ChatCustomisations::ChatMailerExtension)
@@ -22,7 +28,16 @@ after_initialize do
     Chat::TrashChannel.prepend(ChatCustomisations::TrashChannelExtension)
     Jobs::Chat::ChannelDelete.prepend(ChatCustomisations::ChannelDeleteJobExtension)
     Chat::Api::ChannelsController.prepend(ChatCustomisations::ApiChannelControllerExtension)
+    Chat::AddUsersToChannel.prepend(ChatCustomisations::AddUsersToChannelExtension)
+    Chat::Api::ChannelsMembershipsController.prepend(ChatCustomisations::ApiChannelsMembershipsControllerExtension)
+    Chat::SearchChatable.prepend(ChatCustomisations::SearchChatableExtension)
   end
 
+  Chat::Engine.routes.append do
+    namespace :api, defaults: { format: :json } do
+      delete "/channels/:channel_id/memberships/:username" => "channels_memberships#destroy"
+    end
+  end
+  
   Jobs::Chat::AutoJoinUsers.every 10.minutes
 end
