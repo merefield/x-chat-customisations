@@ -9,7 +9,21 @@ module ChatCustomisations
       user = User.find_by(username_lower: params[:username].downcase)
       channel = Chat::Channel.find_by(id: params[:channel_id])
 
-      channel.leave(user) if user && channel
+      if user && channel
+        channel.leave(user)
+
+        if channel.chatable.is_a?(Category) && channel.chatable.read_restricted
+          cg = CategoryGroup.find_by(category_id: channel.chatable.id)
+
+          if cg&.group
+            group = cg.group
+
+            if group.users.exists?(user.id)
+              group.users.destroy(user)  # safely removes the association
+            end
+          end
+        end
+      end
     end
 
     def ensure_staff

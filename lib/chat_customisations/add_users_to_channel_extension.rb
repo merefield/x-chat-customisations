@@ -17,5 +17,60 @@ module ChatCustomisations
         dm_channel: channel.direct_message_channel?,
       )
     end
+
+    def upsert_memberships(channel:, target_users:)
+      always_level = ::Chat::UserChatChannelMembership::NOTIFICATION_LEVELS[:always]
+
+      memberships =
+        target_users.map do |user|
+          {
+            user_id: user.id,
+            chat_channel_id: channel.id,
+            muted: false,
+            following: true,
+            notification_level: always_level,
+            created_at: Time.zone.now,
+            updated_at: Time.zone.now,
+          }
+        end
+
+      if memberships.blank?
+        context[:added_user_ids] = []
+        return
+      end
+
+      context[:added_user_ids] = ::Chat::UserChatChannelMembership
+        .upsert_all(
+          memberships,
+          unique_by: %i[user_id chat_channel_id],
+          returning: Arel.sql("user_id, (xmax = '0') as inserted"),
+        )
+        .select { |row| row["inserted"] }
+        .map { |row| row["user_id"] }
+
+      if channel.chatable.is_a?(Category) && channel.chatable.read_restricted
+        cg = CategoryGroup.find_by(category_id: channel.chatable.id)
+
+        if cg&.group
+          group = cg.group
+          existing_user_ids = group.user_ids
+
+          member_candidates = target_users.reject { |user| existing_user_ids.include?(user.id) }
+          group.users << member_candidates unless member_candidates.empty?
+        end
+      end
+
+      ::Chat::DirectMessageUser.upsert_all(
+        context.added_user_ids.map do |id|
+          {
+            user_id: id,
+            direct_message_channel_id: channel.chatable.id,
+            created_at: Time.zone.now,
+            updated_at: Time.zone.now,
+          }
+        end,
+        unique_by: %i[direct_message_channel_id user_id],
+      )
+    end
   end
 end
