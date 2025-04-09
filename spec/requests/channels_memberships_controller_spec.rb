@@ -113,7 +113,7 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
       it "works for public channel" do
         expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: public_channel.id, following: true, user_id: other_user.id)).to be_present
 
-        delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.username}"
+        delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.username}.json"
 
         expect(response.status).to eq(204)
 
@@ -123,7 +123,7 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
       it "works for private channel" do
         expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(1)
 
-        delete "/chat/api/channels/#{private_channel.id}/memberships/#{other_user.username}"
+        delete "/chat/api/channels/#{private_channel.id}/memberships/#{other_user.username}.json"
 
         expect(response.status).to eq(204)
 
@@ -134,7 +134,7 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
     describe "failure" do
       it "fails if the user is not staff" do
         sign_in(third_user)
-        delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.username}"
+        delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.username}.json"
 
         expect(response.status).to eq(403)
       end

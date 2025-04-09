@@ -14,8 +14,6 @@ end
 
 require_relative "lib/chat_customisations/engine"
 
-# {{icon "people-group"}}
-
 if respond_to?(:register_svg_icon)
   register_svg_icon "people-group"
 end
