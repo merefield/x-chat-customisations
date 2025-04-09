@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ChatCustomisations
   module ApiChannelsMembershipsControllerExtension
     def destroy
@@ -5,7 +6,7 @@ module ChatCustomisations
 
       params.require(:channel_id)
       params.require(:username)
-          
+
       user = User.find_by(username_lower: params[:username].downcase)
       channel = Chat::Channel.find_by(id: params[:channel_id])
 

@@ -56,7 +56,6 @@ RSpec.describe Chat::Api::ChannelsController do
       expect(new_channel.chatable_id).to eq(public_category.id)
     end
 
-
     it "creates a private channel associated to a new category and group, which are removed along with the channel on delete" do
       post "/chat/api/channels", params: private_params
       expect(response.status).to eq(200)
@@ -64,7 +63,6 @@ RSpec.describe Chat::Api::ChannelsController do
       expect(Category.find_by(name: private_params[:channel][:name])).to be_present
       expect(Category.find_by(name: private_params[:channel][:name]).read_restricted).to eq(true)
       expect(Group.find_by(name: private_params[:channel][:name])).to be_present
-
 
       new_channel = Chat::Channel.find(response.parsed_body.dig("channel", "id"))
 

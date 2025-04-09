@@ -15,7 +15,7 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
     Fabricate(:category_channel)
   end
   fab!(:private_channel) do
-     Fabricate(:private_category_channel, group: private_group) 
+    Fabricate(:private_category_channel, group: private_group)
   end
 
   before do
@@ -49,9 +49,8 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
         expect(response.status).to eq(200)
         expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(1)
         expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: private_channel.id, following: true, user_id: other_user.id)).to be_present
-        expect(GroupUser.find_by(group_id: Group.find_by(name:"whatsup").id, user_id: other_user.id)).to be_present
+        expect(GroupUser.find_by(group_id: Group.find_by(name: "whatsup").id, user_id: other_user.id)).to be_present
       end
-
 
       it "works for private channel even when you try to add same person again" do
         expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(0)
@@ -72,9 +71,8 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
 
         expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(2)
         expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: private_channel.id, following: true, user_id: other_user.id)).to be_present
-        expect(GroupUser.find_by(group_id: Group.find_by(name:"whatsup").id, user_id: other_user.id)).to be_present
+        expect(GroupUser.find_by(group_id: Group.find_by(name: "whatsup").id, user_id: other_user.id)).to be_present
       end
-
 
       it "succeeds if the user is moderator" do
         sign_in(moderator)
@@ -87,7 +85,7 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
       end
     end
   end
-  
+
   describe "failure" do
     it "fails if the user is not staff" do
       sign_in(third_user)
@@ -99,7 +97,6 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
       expect(response.status).to eq(422)
     end
   end
-
 
   describe "#destroy" do
     describe "success" do

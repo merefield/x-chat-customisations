@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module ChatCustomisations
   module AddUsersToChannelExtension
 
@@ -13,7 +14,7 @@ module ChatCustomisations
       ::Chat::UsersFromUsernamesAndGroupsQuery.call(
         usernames: params.usernames,
         groups: params.groups,
-        excluded_user_ids: channel.chatable.is_a?(Category)? [] : channel.chatable.direct_message_users.pluck(:user_id),
+        excluded_user_ids: channel.chatable.is_a?(Category) ? [] : channel.chatable.direct_message_users.pluck(:user_id),
         dm_channel: channel.direct_message_channel?,
       )
     end

@@ -38,6 +38,6 @@ after_initialize do
       delete "/channels/:channel_id/memberships/:username" => "channels_memberships#destroy"
     end
   end
-  
+
   Jobs::Chat::AutoJoinUsers.every 10.minutes
 end
