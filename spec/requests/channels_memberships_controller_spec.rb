@@ -101,6 +101,10 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
   describe "#destroy" do
     describe "success" do
       before do
+        sign_in(admin)
+        SiteSetting.chat_enabled = true
+        SiteSetting.chat_allowed_groups = Group::AUTO_GROUPS[:everyone]
+        private_channel.chatable_id = private_category.id
         post "/chat/api/channels/#{public_channel.id}/memberships",
         params: {
           usernames: [other_user.username],
@@ -113,7 +117,7 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
       it "works for public channel" do
         expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: public_channel.id, following: true, user_id: other_user.id)).to be_present
 
-        delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.username}.json"
+        delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.username}"
 
         expect(response.status).to eq(204)
 
@@ -123,7 +127,7 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
       it "works for private channel" do
         expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(1)
 
-        delete "/chat/api/channels/#{private_channel.id}/memberships/#{other_user.username}.json"
+        delete "/chat/api/channels/#{private_channel.id}/memberships/#{other_user.username}"
 
         expect(response.status).to eq(204)
 
