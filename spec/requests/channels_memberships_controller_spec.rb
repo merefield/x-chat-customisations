@@ -122,9 +122,11 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
         expect(response.status).to eq(204), -> {
           "Expected 204 but got #{response.status}.\n" \
           "Response body: #{response.body}\n" \
-          "Response headers: #{response.headers.inspect}"
+          "Response headers: #{response.headers.inspect}" \
+          "Request path: #{request.path}\n" \
+          "Request Method: #{request.method}\n"
         }
-        
+
         expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: public_channel.id, following: true, user_id: other_user.id)).to be_nil
       end
 
@@ -136,7 +138,9 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
         expect(response.status).to eq(204), -> {
           "Expected 204 but got #{response.status}.\n" \
           "Response body: #{response.body}\n" \
-          "Response headers: #{response.headers.inspect}"
+          "Response headers: #{response.headers.inspect}" \
+          "Request path: #{request.path}\n" \
+          "Request Method: #{request.method}\n"
         }
 
         expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(0)

@@ -3,12 +3,15 @@ module ChatCustomisations
   module ApiChannelsMembershipsControllerExtension
     def destroy
       ensure_staff
+    
+      channel_id = params.fetch(:channel_id) { request.path_parameters[:channel_id] }
+      username = params.fetch(:username) { request.path_parameters[:username] }
 
-      params.require(:channel_id)
-      params.require(:username)
+      raise ActionController::ParameterMissing, :channel_id if channel_id.blank?
+      raise ActionController::ParameterMissing, :username if username.blank?
 
-      user = User.find_by(username_lower: params[:username].downcase)
-      channel = Chat::Channel.find_by(id: params[:channel_id])
+      user = User.find_by(username_lower: username.downcase)
+      channel = Chat::Channel.find_by(id: channel_id)
 
       if user && channel
         channel.leave(user)
