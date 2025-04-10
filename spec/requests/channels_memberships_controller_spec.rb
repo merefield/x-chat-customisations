@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 RSpec.describe Chat::Api::ChannelsMembershipsController do
-  fab!(:admin)
-  fab!(:moderator)
-  fab!(:other_user) { Fabricate(:user) }
-  fab!(:third_user) { Fabricate(:user) }
+  fab!(:admin) { Fabricate(:admin, username: "admin_user") }
+  fab!(:moderator) { Fabricate(:moderator, username: "mod_user") }
+  fab!(:other_user) { Fabricate(:user, username: "testuser1") }
+  fab!(:third_user) { Fabricate(:user, username: "testuser2") }
   fab!(:public_category) { Fabricate(:category, name: "Public Category") }
   fab!(:private_group) { Fabricate(:group, name: "whatsup") }
   fab!(:private_category) { Fabricate(:category, name: "whatsup", read_restricted: true) }
