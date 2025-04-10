@@ -4,6 +4,14 @@ module ChatCustomisations
     def destroy
       ensure_staff
 
+      params.permit(
+        :channel_id,
+        :username
+      )
+      params.require(:channel_id)
+      params.require(:username)
+      
+
       channel_id = params.fetch(:channel_id) { request.path_parameters[:channel_id] }
       username = params.fetch(:username) { request.path_parameters[:username] }
 
@@ -29,6 +37,8 @@ module ChatCustomisations
         end
       end
     end
+
+    
 
     def ensure_staff
       raise Discourse::InvalidAccess.new unless current_user && current_user.staff?
