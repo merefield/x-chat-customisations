@@ -33,7 +33,10 @@ after_initialize do
 
   Chat::Engine.routes.append do
     namespace :api, defaults: { format: :json } do
-      delete "/channels/:channel_id/memberships/:username" => "channels_memberships#destroy"
+      delete "/channels/:channel_id/memberships/:username" => "channels_memberships#destroy",
+            :constraints => {
+              username: RouteFormat.username,
+            }
     end
   end
 
