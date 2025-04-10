@@ -20,7 +20,7 @@ module ChatCustomisations
     end
 
     def upsert_memberships(channel:, target_users:)
-      always_level = ::Chat::UserChatChannelMembership::NOTIFICATION_LEVELS[:always]
+      only_mentions = ::Chat::UserChatChannelMembership::NOTIFICATION_LEVELS[:mention]
 
       memberships =
         target_users.map do |user|
@@ -29,7 +29,7 @@ module ChatCustomisations
             chat_channel_id: channel.id,
             muted: false,
             following: true,
-            notification_level: always_level,
+            notification_level: only_mentions,
             created_at: Time.zone.now,
             updated_at: Time.zone.now,
           }
