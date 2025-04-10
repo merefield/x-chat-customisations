@@ -3,7 +3,7 @@ module ChatCustomisations
   module ApiChannelsMembershipsControllerExtension
     def destroy
       ensure_staff
-    
+
       channel_id = params.fetch(:channel_id) { request.path_parameters[:channel_id] }
       username = params.fetch(:username) { request.path_parameters[:username] }
 
