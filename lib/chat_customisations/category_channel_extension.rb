@@ -4,7 +4,7 @@ module ChatCustomisations
     extend ActiveSupport::Concern
 
     included do
-      after_initialize :default_allow_channel_wide_mentions
+      before_validation :default_allow_channel_wide_mentions, on: :create
     end
 
     private
