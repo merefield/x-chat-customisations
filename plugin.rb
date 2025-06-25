@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: x-chat-customisations
 # about: An extension to the Chat plugin that currently suppresses all emails when a user mentions @all
-# version: 0.0.22
+# version: 0.0.23
 # authors: Robert Barrow
 # url: https://github.com/merefield/x-chat-customisations
 
@@ -29,6 +29,7 @@ after_initialize do
     Chat::AddUsersToChannel.prepend(ChatCustomisations::AddUsersToChannelExtension)
     Chat::Api::ChannelsMembershipsController.prepend(ChatCustomisations::ApiChannelsMembershipsControllerExtension)
     Chat::SearchChatable.prepend(ChatCustomisations::SearchChatableExtension)
+    Jobs::Chat::NotifyMentioned.prepend(ChatCustomisations::NotifyMentionedJobExtension)
   end
 
   Chat::Engine.routes.append do
