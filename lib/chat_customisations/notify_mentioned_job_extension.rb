@@ -40,7 +40,7 @@ module ChatCustomisations
 
     def create_notification!(membership, mention, mention_type)
       notification_data = build_data_for(membership, identifier_type: mention_type)
-      return mention.notifications if notification_data.nil? # Skip if no data to notify
+      return nil if notification_data.nil? # Skip if no data to notify
       is_read = ::Chat::Notifier.user_has_seen_message?(membership, @chat_message.id)
       notification =
         ::Notification.create!(
@@ -52,6 +52,20 @@ module ChatCustomisations
         )
 
       mention.notifications << notification
+
+      notification
+    end
+
+    def process_mentions(user_ids, mention_type)
+      memberships = get_memberships(user_ids)
+
+      memberships.each do |membership|
+        mention = find_mention(@chat_message, mention_type, membership.user.id)
+        if mention.present?
+          notification = create_notification!(membership, mention, mention_type)
+          send_notifications(membership, mention_type) if notification.present?
+        end
+      end
     end
   end
 end
