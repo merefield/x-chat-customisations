@@ -1,4 +1,10 @@
 # frozen_string_literal: true
+
+# TODO: find a better way to prevent duplicate registration of tasks
+task("x_chat:make_seen").clear if Rake::Task.task_defined?("x_chat:make_seen")
+task("x_chat:make_unseen").clear if Rake::Task.task_defined?("x_chat:make_unseen")
+
+# Default datetime to set for seen users
 SEEN_DEFAULT_DATETIME = '2025-07-01 12:00:00'
 
 desc "Update seen for each unseen user"
