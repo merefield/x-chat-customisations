@@ -29,6 +29,7 @@ after_initialize do
     Chat::AddUsersToChannel.prepend(ChatCustomisations::AddUsersToChannelExtension)
     Chat::Api::ChannelsMembershipsController.prepend(ChatCustomisations::ApiChannelsMembershipsControllerExtension)
     Chat::SearchChatable.prepend(ChatCustomisations::SearchChatableExtension)
+    Jobs::Chat::NotifyMentioned.prepend(ChatCustomisations::NotifyMentionedJobExtension)
   end
 
   Chat::Engine.routes.append do
