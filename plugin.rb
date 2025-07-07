@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # name: x-chat-customisations
 # about: An extension to the Chat plugin that currently suppresses all emails when a user mentions @all
-# version: 0.0.23
+# version: 0.0.24
 # authors: Robert Barrow
 # url: https://github.com/merefield/x-chat-customisations
 
