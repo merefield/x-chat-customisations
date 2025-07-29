@@ -10,7 +10,8 @@ module ChatCustomisations
         category = Category.new(name: name, user_id: current_user.id, read_restricted: true)
         category.save!
         params[:channel][:chatable_id] = category.id
-        group = Group.new(name: name)
+        group_name = name.parameterize(separator: '_')
+        group = Group.new(name: group_name)
         group.save!
         CategoryGroup.where(category_id: category.id).destroy_all
         cg = CategoryGroup.create!(category_id: category.id, group_id: group.id, permission_type: CategoryGroup.permission_types[:full])
