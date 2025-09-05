@@ -1,15 +1,16 @@
-import { withPluginApi } from "discourse/lib/plugin-api";
 import { tracked } from "@glimmer/tracking";
-import Category from "discourse/models/category";
+import { action } from "@ember/object";
 import { service } from "@ember/service";
+import { withPluginApi } from "discourse/lib/plugin-api";
+import Category from "discourse/models/category";
 
 const PLUGIN_ID = "x-chat-customisations";
-const MIN_HEIGHT_TIMELINE = 325;
 const A_LOT_OF_MEMBERS = 10000; // Define a constant for a large number of members
 
 export default {
   name: "x-chat-init",
-  initialize(application) {
+  pluginId: PLUGIN_ID,
+  initialize() {
     withPluginApi("0.8.40", (api) => {
       api.modifyClass(
         "component:chat/modal/create-channel",
@@ -17,7 +18,8 @@ export default {
           class extends Superclass {
             @service siteSettings;
 
-            @tracked categoryId =
+            @tracked
+            categoryId =
               this.siteSettings
                 .x_chat_customisations_channel_creation_default_category_id; // property already exists, but let's add a default value.
             @tracked category = Category.findById(this.categoryId);
@@ -52,8 +54,6 @@ export default {
               if (this.currentUser?.staff) {
                 return false;
               }
-
-              console.log("Yeah man!!!  ");
 
               return super.isDisabled();
 
@@ -123,13 +123,6 @@ export default {
               }
               return this.siteSettings.chat_max_direct_message_users;
             }
-
-            <template>
-              <MembersCount
-                @count={{this.membersCount}}
-                @max={{this.maxMembers}}
-              />
-            </template>
           }
       );
     });
