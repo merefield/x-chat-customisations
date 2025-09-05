@@ -1,0 +1,13 @@
+{
+  "name": "x-chat-customisations",
+  "version": "0.1.0",
+  "repository": "git@github.com:merefield/x-chat-customisations.git",
+  "author": "Robert Barrow",
+  "license": "GPL V2",
+  "devDependencies": {
+    "@discourse/lint-configs": "^1.0.0",
+    "ember-template-lint": "^5.11.2",
+    "eslint": "^8.52.0",
+    "prettier": "^2.8.8"
+  }
+}
