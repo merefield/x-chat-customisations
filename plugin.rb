@@ -21,6 +21,7 @@ end
 after_initialize do
   reloadable_patch do
     Chat::Mailer.singleton_class.prepend(ChatCustomisations::ChatMailerExtension)
+    Chat::ChatableGroupSerializer.prepend(ChatCustomisations::ChatableGroupSerializerExtension)
     Chat::CategoryChannel.include(ChatCustomisations::CategoryChannelExtension)
     Jobs::UserEmail.prepend(ChatCustomisations::UserEmailJobExtension)
     Chat::TrashChannel.prepend(ChatCustomisations::TrashChannelExtension)
