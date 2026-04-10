@@ -1,7 +1,7 @@
 plugins:
   x_chat_customisations_enabled:
     default: true
-    client: false
+    client: true
   x_chat_customisations_enhanced_logging:
     default: false
     client: false
