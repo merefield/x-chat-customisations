@@ -2,3 +2,6 @@ en:
   js:
     x_chat_customisations:
       title: "Chat Customisations"
+      notification_levels:
+        mention: "For Mentions (@%{username}) & Broadcasts (@all)"
+        explicit_mention: "Only For My Mentions (@%{username})"
