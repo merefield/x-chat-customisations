@@ -69,6 +69,15 @@ RSpec.describe Chat::Api::ChannelsController do
       expect(new_channel.chatable_id).to eq(public_category.id)
     end
 
+    it "creates channels with channel-wide mentions disabled by default" do
+      post "/chat/api/channels", params: public_params
+      expect(response.status).to eq(200)
+
+      new_channel = Chat::Channel.find(response.parsed_body.dig("channel", "id"))
+
+      expect(new_channel.allow_channel_wide_mentions).to eq(false)
+    end
+
     it "creates a private channel associated to a new category and group, which are removed along with the channel on delete" do
       post "/chat/api/channels", params: private_params
       expect(response.status).to eq(200)
@@ -83,12 +92,25 @@ RSpec.describe Chat::Api::ChannelsController do
       expect(new_channel.slug).to eq("whatsup")
       expect(new_channel.description).to eq(private_params[:channel][:description])
       expect(new_channel.chatable_type).to eq(dummy_private_category.class.name)
-      expect(new_channel.chatable_id).to eq(Category.find_by(name: private_params[:channel][:name]).id)
+      expect(new_channel.chatable_id).to eq(
+        Category.find_by(name: private_params[:channel][:name]).id,
+      )
 
       delete "/chat/api/channels/#{new_channel.id}"
       expect(response.status).to eq(200)
-      expect(job_enqueued?(job: Jobs::Chat::ChannelDelete, args: { chat_channel_id: new_channel.id, channel_name: new_channel.name }),).to eq(true)
-      Jobs::Chat::ChannelDelete.new.execute(chat_channel_id: new_channel.id, channel_name: new_channel.name)
+      expect(
+        job_enqueued?(
+          job: Jobs::Chat::ChannelDelete,
+          args: {
+            chat_channel_id: new_channel.id,
+            channel_name: new_channel.name,
+          },
+        ),
+      ).to eq(true)
+      Jobs::Chat::ChannelDelete.new.execute(
+        chat_channel_id: new_channel.id,
+        channel_name: new_channel.name,
+      )
 
       expect(Category.find_by(name: private_params[:channel][:name])).not_to be_present
       expect(Group.find_by(name: private_params[:channel][:name])).not_to be_present
@@ -100,8 +122,10 @@ RSpec.describe Chat::Api::ChannelsController do
       expect(response.status).to eq(200)
 
       expect(Category.find_by(name: private_params_with_spaces[:channel][:name])).to be_present
-      expect(Category.find_by(name: private_params_with_spaces[:channel][:name]).read_restricted).to eq(true)
-      expected_group_name = private_params_with_spaces[:channel][:name].parameterize(separator: '_')
+      expect(
+        Category.find_by(name: private_params_with_spaces[:channel][:name]).read_restricted,
+      ).to eq(true)
+      expected_group_name = private_params_with_spaces[:channel][:name].parameterize(separator: "_")
       expect(Group.find_by(name: expected_group_name)).to be_present
 
       new_channel = Chat::Channel.find(response.parsed_body.dig("channel", "id"))
@@ -110,12 +134,25 @@ RSpec.describe Chat::Api::ChannelsController do
       expect(new_channel.slug).to eq("whats-up-there")
       expect(new_channel.description).to eq(private_params_with_spaces[:channel][:description])
       expect(new_channel.chatable_type).to eq(dummy_private_category.class.name)
-      expect(new_channel.chatable_id).to eq(Category.find_by(name: private_params_with_spaces[:channel][:name]).id)
+      expect(new_channel.chatable_id).to eq(
+        Category.find_by(name: private_params_with_spaces[:channel][:name]).id,
+      )
 
       delete "/chat/api/channels/#{new_channel.id}"
       expect(response.status).to eq(200)
-      expect(job_enqueued?(job: Jobs::Chat::ChannelDelete, args: { chat_channel_id: new_channel.id, channel_name: new_channel.name }),).to eq(true)
-      Jobs::Chat::ChannelDelete.new.execute(chat_channel_id: new_channel.id, channel_name: new_channel.name)
+      expect(
+        job_enqueued?(
+          job: Jobs::Chat::ChannelDelete,
+          args: {
+            chat_channel_id: new_channel.id,
+            channel_name: new_channel.name,
+          },
+        ),
+      ).to eq(true)
+      Jobs::Chat::ChannelDelete.new.execute(
+        chat_channel_id: new_channel.id,
+        channel_name: new_channel.name,
+      )
 
       expect(Category.find_by(name: private_params_with_spaces[:channel][:name])).not_to be_present
       expect(Group.find_by(name: private_params_with_spaces[:channel][:name])).not_to be_present
