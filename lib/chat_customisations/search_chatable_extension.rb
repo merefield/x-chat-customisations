@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 module ChatCustomisations
   module SearchChatableExtension
-
     SEARCH_RESULT_LIMIT = 20
 
     def search_users(params, guardian)
@@ -20,11 +19,16 @@ module ChatCustomisations
       user_search = user_search.includes(:user_option)
 
       if params.excluded_memberships_channel_id
-        user_search =
-          user_search.where(
-            "NOT EXISTS (SELECT 1 FROM user_chat_channel_memberships WHERE user_id = users.id AND following = 'true' AND chat_channel_id = ?)",
-            params.excluded_memberships_channel_id,
-          )
+        channel =
+          Chat::Channel.includes(:chatable).find_by(id: params.excluded_memberships_channel_id)
+
+        if channel && guardian.can_preview_chat_channel?(channel)
+          user_search =
+            user_search.where(
+              "NOT EXISTS (SELECT 1 FROM user_chat_channel_memberships WHERE user_id = users.id AND following = 'true' AND chat_channel_id = ?)",
+              params.excluded_memberships_channel_id,
+            )
+        end
       end
 
       user_search
