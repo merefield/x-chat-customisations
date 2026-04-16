@@ -13,6 +13,9 @@ RSpec.describe "Chat channel memberships" do
   end
   fab!(:public_channel, :category_channel)
   fab!(:private_channel) { Fabricate(:private_category_channel, group: private_group) }
+  fab!(:empty_direct_message_channel) do
+    Fabricate(:direct_message_channel, users: [third_user, Fabricate(:user)], group: false)
+  end
 
   before do
     SiteSetting.chat_enabled = true
@@ -38,6 +41,12 @@ RSpec.describe "Chat channel memberships" do
             user_id: other_user.id,
           ),
         ).to be_present
+        expect(
+          Chat::DirectMessageUser.find_by(
+            direct_message_channel_id: public_channel.chatable.id,
+            user_id: other_user.id,
+          ),
+        ).to be_nil
       end
 
       it "works for private channel" do
@@ -68,6 +77,12 @@ RSpec.describe "Chat channel memberships" do
         expect(
           GroupUser.find_by(group_id: Group.find_by(name: "whatsup").id, user_id: other_user.id),
         ).to be_present
+        expect(
+          Chat::DirectMessageUser.find_by(
+            direct_message_channel_id: private_channel.chatable.id,
+            user_id: other_user.id,
+          ),
+        ).to be_nil
       end
 
       it "works for private channel even when you try to add same person again" do
@@ -116,6 +131,24 @@ RSpec.describe "Chat channel memberships" do
              }
 
         expect(response.status).to eq(200)
+      end
+
+      it "allows adding members to a one-on-one DM with no messages" do
+        sign_in(third_user)
+
+        post "/chat/api/channels/#{empty_direct_message_channel.id}/memberships",
+             params: {
+               usernames: [other_user.username],
+             }
+
+        expect(response.status).to eq(200)
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: empty_direct_message_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ),
+        ).to be_present
       end
     end
   end

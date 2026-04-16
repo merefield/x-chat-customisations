@@ -2,27 +2,40 @@
 module ChatCustomisations
   module AddUsersToChannelExtension
     def can_add_users_to_channel(guardian:, channel:)
-      guardian.user.staff? ||
-        (
-          channel.joined_by?(guardian.user) && channel.direct_message_channel? &&
-            channel.chatable.group
-        )
+      return true if guardian.user.staff? && channel.category_channel?
+
+      channel.joined_by?(guardian.user) && channel.direct_message_channel? &&
+        (channel.chatable.group? || channel.messages_count == 0)
     end
 
-    def fetch_target_users(params:, channel:)
-      ::Chat::UsersFromUsernamesAndGroupsQuery.call(
-        usernames: params.usernames,
-        groups: params.groups,
-        excluded_user_ids:
-          (
-            if channel.chatable.is_a?(Category)
-              []
-            else
-              channel.chatable.direct_message_users.pluck(:user_id)
-            end
-          ),
-        dm_channel: channel.direct_message_channel?,
-      )
+    def fetch_target_users(params:, channel:, guardian:)
+      target_groups =
+        if params.groups.present?
+          Group
+            .where(name: params.groups)
+            .visible_groups(guardian.user)
+            .members_visible_groups(guardian.user)
+            .pluck(:name)
+        end
+
+      target_users =
+        ::Chat::UsersFromUsernamesAndGroupsQuery.call(
+          usernames: params.usernames,
+          groups: target_groups,
+          excluded_user_ids:
+            (
+              if channel.direct_message_channel?
+                channel.chatable.direct_message_users.pluck(:user_id)
+              else
+                []
+              end
+            ),
+          dm_channel: channel.direct_message_channel?,
+        )
+
+      return target_users if !channel.direct_message_channel?
+
+      target_users + channel.chatable.users.where.not(id: guardian.user)
     end
 
     def create_memberships(channel:, target_users:)
@@ -55,6 +68,8 @@ module ChatCustomisations
         .select { |row| row["inserted"] }
         .map { |row| row["user_id"] }
 
+      added_users = target_users.select { |user| context.added_user_ids.include?(user.id) }
+
       if channel.chatable.is_a?(Category) && channel.chatable.read_restricted
         cg = CategoryGroup.find_by(category_id: channel.chatable.id)
 
@@ -62,12 +77,14 @@ module ChatCustomisations
           group = cg.group
           existing_user_ids = group.user_ids
 
-          member_candidates = target_users.reject { |user| existing_user_ids.include?(user.id) }
+          member_candidates = added_users.reject { |user| existing_user_ids.include?(user.id) }
           group.users << member_candidates unless member_candidates.empty?
         end
       end
 
-      ::Chat::DirectMessageUser.upsert_all(
+      return if !channel.direct_message_channel?
+
+      ::Chat::DirectMessageUser.insert_all(
         context.added_user_ids.map do |id|
           {
             user_id: id,
