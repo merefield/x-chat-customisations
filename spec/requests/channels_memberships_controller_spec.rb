@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe Chat::Api::ChannelsMembershipsController do
+RSpec.describe "Chat channel memberships" do
   fab!(:admin) { Fabricate(:admin, username: "admin_user") }
   fab!(:moderator) { Fabricate(:moderator, username: "mod_user") }
   fab!(:other_user) { Fabricate(:user, username: "testuser1") }
@@ -11,12 +11,8 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
   fab!(:category_group) do
     Fabricate(:category_group, category: private_category, group: private_group)
   end
-  fab!(:public_channel) do
-    Fabricate(:category_channel)
-  end
-  fab!(:private_channel) do
-    Fabricate(:private_category_channel, group: private_group)
-  end
+  fab!(:public_channel, :category_channel)
+  fab!(:private_channel) { Fabricate(:private_category_channel, group: private_group) }
 
   before do
     SiteSetting.chat_enabled = true
@@ -35,51 +31,89 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
 
         expect(response.status).to eq(200)
 
-        expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: public_channel.id, following: true, user_id: other_user.id)).to be_present
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: public_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ),
+        ).to be_present
       end
 
       it "works for private channel" do
-        expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(0)
+        expect(
+          GroupUser.where(
+            group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
+          ).count,
+        ).to eq(0)
 
         post "/chat/api/channels/#{private_channel.id}/memberships",
-              params: {
-                usernames: [other_user.username],
-              }
+             params: {
+               usernames: [other_user.username],
+             }
 
         expect(response.status).to eq(200)
-        expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(1)
-        expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: private_channel.id, following: true, user_id: other_user.id)).to be_present
-        expect(GroupUser.find_by(group_id: Group.find_by(name: "whatsup").id, user_id: other_user.id)).to be_present
+        expect(
+          GroupUser.where(
+            group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
+          ).count,
+        ).to eq(1)
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: private_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ),
+        ).to be_present
+        expect(
+          GroupUser.find_by(group_id: Group.find_by(name: "whatsup").id, user_id: other_user.id),
+        ).to be_present
       end
 
       it "works for private channel even when you try to add same person again" do
-        expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(0)
+        expect(
+          GroupUser.where(
+            group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
+          ).count,
+        ).to eq(0)
 
         post "/chat/api/channels/#{private_channel.id}/memberships",
-              params: {
-                usernames: [other_user.username, third_user.username],
-              }
+             params: {
+               usernames: [other_user.username, third_user.username],
+             }
 
         expect(response.status).to eq(200)
 
         post "/chat/api/channels/#{private_channel.id}/memberships",
-              params: {
-                usernames: [third_user.username],
-              }
+             params: {
+               usernames: [third_user.username],
+             }
 
         expect(response.status).to eq(200)
 
-        expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(2)
-        expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: private_channel.id, following: true, user_id: other_user.id)).to be_present
-        expect(GroupUser.find_by(group_id: Group.find_by(name: "whatsup").id, user_id: other_user.id)).to be_present
+        expect(
+          GroupUser.where(
+            group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
+          ).count,
+        ).to eq(2)
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: private_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ),
+        ).to be_present
+        expect(
+          GroupUser.find_by(group_id: Group.find_by(name: "whatsup").id, user_id: other_user.id),
+        ).to be_present
       end
 
       it "succeeds if the user is moderator" do
         sign_in(moderator)
         post "/chat/api/channels/#{public_channel.id}/memberships",
-              params: {
-                usernames: [other_user.username],
-              }
+             params: {
+               usernames: [other_user.username],
+             }
 
         expect(response.status).to eq(200)
       end
@@ -90,9 +124,9 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
     it "fails if the user is not staff" do
       sign_in(third_user)
       post "/chat/api/channels/#{public_channel.id}/memberships",
-            params: {
-              usernames: [other_user.username],
-            }
+           params: {
+             usernames: [other_user.username],
+           }
 
       expect(response.status).to eq(422)
     end
@@ -106,57 +140,80 @@ RSpec.describe Chat::Api::ChannelsMembershipsController do
         SiteSetting.chat_allowed_groups = Group::AUTO_GROUPS[:everyone]
         private_channel.chatable_id = private_category.id
         post "/chat/api/channels/#{public_channel.id}/memberships",
-        params: {
-          usernames: [other_user.username],
-        }
+             params: {
+               usernames: [other_user.username],
+             }
         post "/chat/api/channels/#{private_channel.id}/memberships",
-        params: {
-          usernames: [other_user.username],
-        }
+             params: {
+               usernames: [other_user.username],
+             }
       end
       it "works for public channel" do
-        expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: public_channel.id, following: true, user_id: other_user.id)).to be_present
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: public_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ),
+        ).to be_present
         sign_in(admin)
-        delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.username.downcase}.json",
-                                                                                                           params: { # unncessary in proudction, CI workaround
-          username: other_user.username.downcase,
-        }
+        delete "/chat/api/channels/#{public_channel.id}/memberships/by-username/#{other_user.username.downcase}.json"
 
-        expect(response.status).to eq(204), -> {
+        expect(response.status).to eq(204),
+        -> do
           "Expected 204 but got #{response.status}.\n" \
-          "Response body: #{response.body}\n" \
-          "Response headers: #{response.headers.inspect}" \
-          "Request path: #{request.path}\n" \
-          "Request Method: #{request.method}\n"
-        }
+            "Response body: #{response.body}\n" \
+            "Response headers: #{response.headers.inspect}" \
+            "Request path: #{request.path}\n" \
+            "Request Method: #{request.method}\n"
+        end
 
-        expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: public_channel.id, following: true, user_id: other_user.id)).to be_nil
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: public_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ),
+        ).to be_nil
       end
 
       it "works for private channel" do
-        expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(1)
+        expect(
+          GroupUser.where(
+            group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
+          ).count,
+        ).to eq(1)
         sign_in(admin)
-        delete "/chat/api/channels/#{private_channel.id}/memberships/#{other_user.username.downcase}.json",
-                                                                                                            params: { # unncessary in proudction, CI workaround
-          username: other_user.username.downcase,
-        }
+        delete "/chat/api/channels/#{private_channel.id}/memberships/by-username/#{other_user.username.downcase}.json"
 
-        expect(response.status).to eq(204), -> {
+        expect(response.status).to eq(204),
+        -> do
           "Expected 204 but got #{response.status}.\n" \
-          "Response body: #{response.body}\n" \
-          "Response headers: #{response.headers.inspect}" \
-          "Request path: #{request.path}\n" \
-          "Request Method: #{request.method}\n"
-        }
+            "Response body: #{response.body}\n" \
+            "Response headers: #{response.headers.inspect}" \
+            "Request path: #{request.path}\n" \
+            "Request Method: #{request.method}\n"
+        end
 
-        expect(GroupUser.where(group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id).count).to eq(0)
-        expect(Chat::UserChatChannelMembership.find_by(chat_channel_id: private_channel.id, following: true, user_id: other_user.id)).to be_nil
+        expect(
+          GroupUser.where(
+            group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
+          ).count,
+        ).to eq(0)
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: private_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ),
+        ).to be_nil
       end
     end
     describe "failure" do
       it "fails if the user is not staff" do
         sign_in(third_user)
-        delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.username.downcase}.json", as: :json
+        delete "/chat/api/channels/#{public_channel.id}/memberships/by-username/#{other_user.username.downcase}.json",
+               as: :json
 
         expect(response.status).to eq(403)
       end

@@ -6,7 +6,7 @@
 # url: https://github.com/merefield/x-chat-customisations
 
 enabled_site_setting :x_chat_customisations_enabled
-register_asset 'stylesheets/common/x_chat_common.scss'
+register_asset "stylesheets/common/x_chat_common.scss"
 
 module ::ChatCustomisations
   PLUGIN_NAME = "chat-customisations".freeze
@@ -14,11 +14,11 @@ end
 
 require_relative "lib/chat_customisations/engine"
 
-if respond_to?(:register_svg_icon)
-  register_svg_icon "people-group"
-end
+register_svg_icon "people-group" if respond_to?(:register_svg_icon)
 
 after_initialize do
+  require_relative "lib/chat_customisations/channels_memberships_by_username_controller"
+
   reloadable_patch do
     Chat::Mailer.singleton_class.prepend(ChatCustomisations::ChatMailerExtension)
     Chat::ChatableGroupSerializer.prepend(ChatCustomisations::ChatableGroupSerializerExtension)
@@ -28,17 +28,17 @@ after_initialize do
     Jobs::Chat::ChannelDelete.prepend(ChatCustomisations::ChannelDeleteJobExtension)
     Chat::Api::ChannelsController.prepend(ChatCustomisations::ApiChannelControllerExtension)
     Chat::AddUsersToChannel.prepend(ChatCustomisations::AddUsersToChannelExtension)
-    Chat::Api::ChannelsMembershipsController.prepend(ChatCustomisations::ApiChannelsMembershipsControllerExtension)
     Chat::SearchChatable.prepend(ChatCustomisations::SearchChatableExtension)
     Jobs::Chat::NotifyMentioned.prepend(ChatCustomisations::NotifyMentionedJobExtension)
   end
 
   Chat::Engine.routes.append do
     namespace :api, defaults: { format: :json } do
-      delete "/channels/:channel_id/memberships/:username" => "channels_memberships#destroy",
+      delete "/channels/:channel_id/memberships/by-username/:username" =>
+               "channels_memberships_by_username#destroy",
              :constraints => {
-              username: RouteFormat.username,
-            }
+               username: RouteFormat.username,
+             }
     end
   end
 

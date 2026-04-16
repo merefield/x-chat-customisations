@@ -1,24 +1,31 @@
 # frozen_string_literal: true
 module ChatCustomisations
   module AddUsersToChannelExtension
-
     def can_add_users_to_channel(guardian:, channel:)
       guardian.user.staff? ||
-      (channel.joined_by?(guardian.user) &&
-       channel.direct_message_channel? &&
-       channel.chatable.group)
+        (
+          channel.joined_by?(guardian.user) && channel.direct_message_channel? &&
+            channel.chatable.group
+        )
     end
 
     def fetch_target_users(params:, channel:)
       ::Chat::UsersFromUsernamesAndGroupsQuery.call(
         usernames: params.usernames,
         groups: params.groups,
-        excluded_user_ids: channel.chatable.is_a?(Category) ? [] : channel.chatable.direct_message_users.pluck(:user_id),
+        excluded_user_ids:
+          (
+            if channel.chatable.is_a?(Category)
+              []
+            else
+              channel.chatable.direct_message_users.pluck(:user_id)
+            end
+          ),
         dm_channel: channel.direct_message_channel?,
       )
     end
 
-    def upsert_memberships(channel:, target_users:)
+    def create_memberships(channel:, target_users:)
       only_mentions = ::Chat::UserChatChannelMembership::NOTIFICATION_LEVELS[:mention]
 
       memberships =
@@ -40,7 +47,7 @@ module ChatCustomisations
       end
 
       context[:added_user_ids] = ::Chat::UserChatChannelMembership
-        .upsert_all(
+        .insert_all(
           memberships,
           unique_by: %i[user_id chat_channel_id],
           returning: Arel.sql("user_id, (xmax = '0') as inserted"),
