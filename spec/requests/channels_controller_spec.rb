@@ -173,5 +173,17 @@ RSpec.describe Chat::Api::ChannelsController do
       expect(Category.find_by(name: private_params_with_spaces[:channel][:name])).to be_nil
       expect(Chat::Channel.find_by(name: private_params_with_spaces[:channel][:name])).to be_nil
     end
+
+    it "rolls back private backing records when channel creation fails" do
+      Fabricate(:category_channel, slug: private_params[:channel][:slug])
+
+      expect { post "/chat/api/channels", params: private_params }.not_to change {
+        Category.where(name: private_params[:channel][:name]).count
+      }
+
+      expect(response.status).to eq(422)
+      expect(Group.find_by(name: private_params[:channel][:name])).to be_nil
+      expect(Chat::Channel.find_by(name: private_params[:channel][:name])).to be_nil
+    end
   end
 end
