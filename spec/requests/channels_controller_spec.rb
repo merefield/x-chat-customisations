@@ -158,5 +158,20 @@ RSpec.describe Chat::Api::ChannelsController do
       expect(Group.find_by(name: private_params_with_spaces[:channel][:name])).not_to be_present
       expect(Chat::Channel.find_by(id: new_channel.id)).not_to be_present
     end
+
+    it "rejects private channel creation when the derived group name already exists" do
+      Fabricate(
+        :group,
+        name: private_params_with_spaces[:channel][:name].parameterize(separator: "_"),
+      )
+
+      expect { post "/chat/api/channels", params: private_params_with_spaces }.not_to change {
+        Category.count
+      }
+
+      expect(response.status).to eq(400)
+      expect(Category.find_by(name: private_params_with_spaces[:channel][:name])).to be_nil
+      expect(Chat::Channel.find_by(name: private_params_with_spaces[:channel][:name])).to be_nil
+    end
   end
 end
