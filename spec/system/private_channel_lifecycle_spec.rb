@@ -6,6 +6,7 @@ RSpec.describe "X Chat Customisations private channel lifecycle" do
   fab!(:dummy_private_category) { Fabricate(:category, name: "Private Channel Template") }
 
   let(:chat_page) { PageObjects::Pages::Chat.new }
+  let(:channel_modal) { PageObjects::Modals::ChatChannelCreate.new }
   let(:channel_name) { "Private Lifecycle" }
   let(:channel_slug) { "private-lifecycle" }
 
@@ -18,23 +19,26 @@ RSpec.describe "X Chat Customisations private channel lifecycle" do
   end
 
   it "removes a member and deletes the backing records for a private channel" do
-    result =
-      ChatCustomisations::CreatePrivateCategoryChannel.call!(
-        guardian: admin.guardian,
-        params: {
-          name: channel_name,
-          slug: channel_slug,
-          description: "Private lifecycle coverage",
-          threading_enabled: true,
-        },
-      )
+    chat_page.visit_browse
+    chat_page.new_channel_button.click
 
-    channel = result.channel
-    category = result.category
-    group = result.group
+    channel_modal.fill_name(channel_name)
+    wait_for_attribute(channel_modal.slug_input, :placeholder, channel_slug)
+    channel_modal.fill_slug(channel_slug)
+    channel_modal.fill_description("Private lifecycle coverage")
+    page.execute_script(
+      "document.querySelector('.chat-modal-create-channel .btn-primary.create').click()",
+    )
+
+    wait_for(timeout: 5) { Chat::Channel.exists?(slug: channel_slug) }
+
+    channel = Chat::Channel.find_by!(slug: channel_slug)
+    category = Category.find_by!(name: channel_name)
+    group = Group.find_by!(name: channel_name.parameterize(separator: "_"))
 
     expect(channel.chatable_id).to eq(category.id)
     expect(category.read_restricted).to eq(true)
+    expect(page).to have_current_path(channel.url)
     expect(GroupUser.exists?(group:, user: admin, owner: true)).to eq(true)
 
     Chat::AddUsersToChannel.call!(
