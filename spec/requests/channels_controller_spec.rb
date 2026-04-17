@@ -38,6 +38,20 @@ RSpec.describe Chat::Api::ChannelsController do
       }
     end
 
+    let(:private_modal_params) do
+      {
+        channel: {
+          chatable_id: dummy_private_category.id.to_s,
+          name: "private lifecycle",
+          slug: "private-lifecycle",
+          description: "Created from the modal payload",
+          auto_join_users: "false",
+          threading_enabled: "true",
+          emoji: "",
+        },
+      }
+    end
+
     let(:private_params_with_spaces) do
       {
         channel: {
@@ -115,6 +129,32 @@ RSpec.describe Chat::Api::ChannelsController do
       expect(Category.find_by(name: private_params[:channel][:name])).not_to be_present
       expect(Group.find_by(name: private_params[:channel][:name])).not_to be_present
       expect(Chat::Channel.find_by(id: new_channel.id)).not_to be_present
+    end
+
+    it "creates a private channel from the modal payload shape" do
+      post "/chat/api/channels", params: private_modal_params
+
+      expect(response.status).to eq(200)
+
+      new_channel = Chat::Channel.find(response.parsed_body.dig("channel", "id"))
+
+      expect(new_channel.name).to eq(private_modal_params[:channel][:name])
+      expect(new_channel.slug).to eq(private_modal_params[:channel][:slug])
+      expect(new_channel.description).to eq(private_modal_params[:channel][:description])
+      expect(new_channel.chatable_type).to eq(dummy_private_category.class.name)
+      expect(new_channel.chatable_id).to eq(
+        Category.find_by(name: private_modal_params[:channel][:name]).id,
+      )
+    end
+
+    it "lists channels successfully after creating a private channel from the modal payload shape" do
+      post "/chat/api/channels", params: private_modal_params
+
+      expect(response.status).to eq(200)
+
+      get "/chat/api/channels"
+
+      expect(response.status).to eq(200)
     end
 
     it "creates a private channel associated to a new category and group, even with spaces in the name, which are removed along with the channel on delete" do

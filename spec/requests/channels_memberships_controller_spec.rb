@@ -42,6 +42,13 @@ RSpec.describe "Chat channel memberships" do
           ),
         ).to be_present
         expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: public_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ).notification_level,
+        ).to eq("mention")
+        expect(
           Chat::DirectMessageUser.find_by(
             direct_message_channel_id: public_channel.chatable.id,
             user_id: other_user.id,
@@ -74,6 +81,13 @@ RSpec.describe "Chat channel memberships" do
             user_id: other_user.id,
           ),
         ).to be_present
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: private_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ).notification_level,
+        ).to eq("mention")
         expect(
           GroupUser.find_by(group_id: Group.find_by(name: "whatsup").id, user_id: other_user.id),
         ).to be_present
@@ -149,6 +163,13 @@ RSpec.describe "Chat channel memberships" do
             user_id: other_user.id,
           ),
         ).to be_present
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: empty_direct_message_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ).notification_level,
+        ).to eq("mention")
       end
     end
   end
@@ -228,6 +249,30 @@ RSpec.describe "Chat channel memberships" do
             "Request Method: #{request.method}\n"
         end
 
+        expect(
+          GroupUser.where(
+            group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
+          ).count,
+        ).to eq(0)
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: private_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ),
+        ).to be_nil
+      end
+
+      it "works for private channel via the user-id endpoint" do
+        expect(
+          GroupUser.where(
+            group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
+          ).count,
+        ).to eq(1)
+
+        delete "/chat/api/channels/#{private_channel.id}/memberships/#{other_user.id}.json"
+
+        expect(response.status).to eq(200)
         expect(
           GroupUser.where(
             group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,

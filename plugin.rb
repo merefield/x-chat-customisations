@@ -18,6 +18,7 @@ register_svg_icon "people-group" if respond_to?(:register_svg_icon)
 
 after_initialize do
   require_relative "lib/chat_customisations/channels_memberships_by_username_controller"
+  require_relative "lib/chat_customisations/remove_user_from_channel_extension"
 
   reloadable_patch do
     Chat::Mailer.singleton_class.prepend(ChatCustomisations::ChatMailerExtension)
@@ -28,6 +29,7 @@ after_initialize do
     Jobs::Chat::ChannelDelete.prepend(ChatCustomisations::ChannelDeleteJobExtension)
     Chat::Api::ChannelsController.prepend(ChatCustomisations::ApiChannelControllerExtension)
     Chat::AddUsersToChannel.prepend(ChatCustomisations::AddUsersToChannelExtension)
+    Chat::RemoveUserFromChannel.prepend(ChatCustomisations::RemoveUserFromChannelExtension)
     Chat::SearchChatable.prepend(ChatCustomisations::SearchChatableExtension)
     Jobs::Chat::NotifyMentioned.prepend(ChatCustomisations::NotifyMentionedJobExtension)
   end

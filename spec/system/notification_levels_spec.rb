@@ -2,16 +2,26 @@
 
 RSpec.describe "X Chat Customisations notification levels" do
   fab!(:current_user, :user)
+  fab!(:other_user, :user)
   fab!(:channel_1, :category_channel)
 
   let(:chat_page) { PageObjects::Pages::Chat.new }
   let(:chat_sidebar_page) { PageObjects::Pages::ChatSidebar.new }
   let(:toasts) { PageObjects::Components::Toasts.new }
+  let(:chat_mention_notifications) do
+    Notification.where(user: current_user, notification_type: Notification.types[:chat_mention])
+  end
 
   before do
+    SiteSetting.navigation_menu = "sidebar"
     chat_system_bootstrap
     channel_1.add(current_user)
+    channel_1.add(other_user)
     sign_in(current_user)
+  end
+
+  def create_message(message)
+    Fabricate(:chat_message, chat_channel: channel_1, user: other_user, message:, use_service: true)
   end
 
   it "adds explicit mention to the channel settings notification selector" do
@@ -43,5 +53,44 @@ RSpec.describe "X Chat Customisations notification levels" do
       chat_sidebar_page.open_notification_settings(channel_1)
       chat_sidebar_page.set_notification_level("explicit-mention")
     }.to change { membership.reload.notification_level }.from("mention").to("explicit_mention")
+  end
+
+  it "suppresses @all notifications while keeping direct mentions after selecting explicit mention" do
+    Jobs.run_immediately!
+    set_subfolder "/discuss"
+    channel_1.update!(allow_channel_wide_mentions: true)
+
+    membership = channel_1.membership_for(current_user)
+
+    chat_page.visit_channel(channel_1)
+
+    expect {
+      chat_sidebar_page.open_notification_settings(channel_1)
+      chat_sidebar_page.set_notification_level("explicit-mention")
+    }.to change { membership.reload.notification_level }.from("mention").to("explicit_mention")
+
+    create_message("this is fine @all")
+
+    expect(chat_mention_notifications.count).to eq(0)
+
+    visit("/discuss")
+    expect(page).to have_no_css(".chat-header-icon .chat-channel-unread-indicator.-urgent")
+
+    direct_message = create_message("this is fine @#{current_user.username}")
+
+    expect(chat_mention_notifications.count).to eq(1)
+
+    visit("/discuss")
+    find(".header-dropdown-toggle.current-user").click
+
+    within("#user-menu-button-chat-notifications") do |panel|
+      expect(panel).to have_content(1)
+      panel.click
+    end
+
+    expect(find("#quick-access-chat-notifications")).to have_link(
+      I18n.t("js.notifications.popup.chat_mention.direct", channel: channel_1.name),
+      href: "/discuss/chat/c/#{channel_1.slug}/#{channel_1.id}/#{direct_message.id}",
+    )
   end
 end
