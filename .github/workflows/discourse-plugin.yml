@@ -1,11 +1,359 @@
-name: Discourse Plugin
+name: Latest Integration
 
 on:
   push:
-    branches:
-      - main
   pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DISCOURSE_PATH: discourse
+  DISCOURSE_REPOSITORY: discourse/discourse
+  DISCOURSE_REF: latest
+  CHAT_REPOSITORY: merefield/chat
+  CHAT_REF: latest
+  PLUGIN_REPOSITORY: merefield/x-chat-customisations
+  PLUGIN_REF: latest
+  RUBY_VERSION: "3.4"
+  NODE_VERSION: "20"
+  PNPM_VERSION: "10.28.0"
+  LOAD_PLUGINS: 1
+  RAILS_ENV: test
+  PGHOST: 127.0.0.1
+  PGUSER: postgres
+  PGPASSWORD: postgres
+  DISCOURSE_DB_HOST: 127.0.0.1
+  DISCOURSE_DB_USERNAME: postgres
+  DISCOURSE_DB_PASSWORD: postgres
+  DISCOURSE_DB_NAME: discourse_test
+  REDIS_URL: redis://127.0.0.1:6379/1
 
 jobs:
-  ci:
-    uses: discourse/.github/.github/workflows/discourse-plugin.yml@v1
+  schedule-gate:
+    name: Schedule Gate
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.gate.outputs.should_run }}
+    steps:
+      - id: gate
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" != "schedule" ]]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          epoch_days=$(( $(date -u +%s) / 86400 ))
+          if (( epoch_days % 3 == 0 )); then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: schedule-gate
+    if: needs.schedule-gate.outputs.should_run == 'true'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: discourse_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d discourse_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout Discourse latest
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.DISCOURSE_REPOSITORY }}
+          ref: ${{ env.DISCOURSE_REF }}
+          path: ${{ env.DISCOURSE_PATH }}
+
+      - name: Remove bundled chat plugin
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: rm -rf plugins/chat
+
+      - name: Checkout chat fork latest
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CHAT_REPOSITORY }}
+          ref: ${{ env.CHAT_REF }}
+          path: ${{ env.DISCOURSE_PATH }}/plugins/chat
+
+      - name: Checkout x-chat-customisations latest
+        if: github.event_name == 'schedule'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.PLUGIN_REPOSITORY }}
+          ref: ${{ env.PLUGIN_REF }}
+          path: ${{ env.DISCOURSE_PATH }}/plugins/x-chat-customisations
+
+      - name: Checkout x-chat-customisations under test
+        if: github.event_name != 'schedule'
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.DISCOURSE_PATH }}/plugins/x-chat-customisations
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: ${{ env.DISCOURSE_PATH }}/pnpm-lock.yaml
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Install dependencies
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: |
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+          pnpm install --frozen-lockfile
+
+      - name: Prepare test database
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: |
+          bin/rake db:create
+          bin/rake db:migrate
+
+      - name: Run lint
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: bin/lint plugins/x-chat-customisations
+
+  spec:
+    name: Specs
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: schedule-gate
+    if: needs.schedule-gate.outputs.should_run == 'true'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: discourse_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d discourse_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout Discourse latest
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.DISCOURSE_REPOSITORY }}
+          ref: ${{ env.DISCOURSE_REF }}
+          path: ${{ env.DISCOURSE_PATH }}
+
+      - name: Remove bundled chat plugin
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: rm -rf plugins/chat
+
+      - name: Checkout chat fork latest
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CHAT_REPOSITORY }}
+          ref: ${{ env.CHAT_REF }}
+          path: ${{ env.DISCOURSE_PATH }}/plugins/chat
+
+      - name: Checkout x-chat-customisations latest
+        if: github.event_name == 'schedule'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.PLUGIN_REPOSITORY }}
+          ref: ${{ env.PLUGIN_REF }}
+          path: ${{ env.DISCOURSE_PATH }}/plugins/x-chat-customisations
+
+      - name: Checkout x-chat-customisations under test
+        if: github.event_name != 'schedule'
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.DISCOURSE_PATH }}/plugins/x-chat-customisations
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: ${{ env.DISCOURSE_PATH }}/pnpm-lock.yaml
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Install dependencies
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: |
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+          pnpm install --frozen-lockfile
+
+      - name: Prepare test database
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: |
+          bin/rake db:create
+          bin/rake db:migrate
+
+      - name: Run plugin specs
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: >-
+          bin/rspec
+          plugins/x-chat-customisations/spec/lib
+          plugins/x-chat-customisations/spec/requests
+          plugins/x-chat-customisations/spec/services
+
+  system:
+    name: System Specs
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    needs: schedule-gate
+    if: needs.schedule-gate.outputs.should_run == 'true'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: discourse_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d discourse_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout Discourse latest
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.DISCOURSE_REPOSITORY }}
+          ref: ${{ env.DISCOURSE_REF }}
+          path: ${{ env.DISCOURSE_PATH }}
+
+      - name: Remove bundled chat plugin
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: rm -rf plugins/chat
+
+      - name: Checkout chat fork latest
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CHAT_REPOSITORY }}
+          ref: ${{ env.CHAT_REF }}
+          path: ${{ env.DISCOURSE_PATH }}/plugins/chat
+
+      - name: Checkout x-chat-customisations latest
+        if: github.event_name == 'schedule'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.PLUGIN_REPOSITORY }}
+          ref: ${{ env.PLUGIN_REF }}
+          path: ${{ env.DISCOURSE_PATH }}/plugins/x-chat-customisations
+
+      - name: Checkout x-chat-customisations under test
+        if: github.event_name != 'schedule'
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.DISCOURSE_PATH }}/plugins/x-chat-customisations
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: ${{ env.DISCOURSE_PATH }}/pnpm-lock.yaml
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Set up Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install dependencies
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: |
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+          pnpm install --frozen-lockfile
+
+      - name: Prepare test database
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: |
+          bin/rake db:create
+          bin/rake db:migrate
+
+      - name: Run system specs
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+        run: xvfb-run -a bin/rspec plugins/x-chat-customisations/spec/system
