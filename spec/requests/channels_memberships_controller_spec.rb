@@ -295,6 +295,22 @@ RSpec.describe "Chat channel memberships" do
 
         expect(response.status).to eq(403)
       end
+
+      it "returns not found when the username does not exist" do
+        sign_in(admin)
+
+        delete "/chat/api/channels/#{public_channel.id}/memberships/by-username/missing-user.json"
+
+        expect(response.status).to eq(404)
+      end
+
+      it "returns not found when the channel does not exist" do
+        sign_in(admin)
+
+        delete "/chat/api/channels/999999/memberships/by-username/#{other_user.username.downcase}.json"
+
+        expect(response.status).to eq(404)
+      end
     end
   end
 end

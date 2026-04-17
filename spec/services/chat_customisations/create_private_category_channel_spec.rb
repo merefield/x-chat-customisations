@@ -109,6 +109,21 @@ RSpec.describe ChatCustomisations::CreatePrivateCategoryChannel do
           following: true,
         )
       end
+
+      context "when auto join users is enabled" do
+        let(:params) { super().merge(auto_join_users: true) }
+
+        it "runs the auto join service after creating the channel" do
+          Chat::AutoJoinChannels
+            .expects(:call)
+            .with(params: has_entries(channel_id: kind_of(Integer)))
+            .once
+
+          result
+
+          expect(result[:channel].auto_join_users).to eq(true)
+        end
+      end
     end
   end
 end
