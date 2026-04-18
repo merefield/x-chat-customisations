@@ -31,7 +31,21 @@ module ChatCustomisations
         end
       end
 
-      user_search
+      filter_term = params.term.to_s
+      like_term = User.sanitize_sql_like(filter_term)
+      escaped_exact = User.connection.quote(filter_term)
+      escaped_prefix = User.connection.quote("#{like_term}%")
+
+      select_sql = <<~SQL
+        users.*,
+        CASE
+          WHEN users.username_lower = #{escaped_exact} THEN #{Chat::ChannelFetcher::MATCH_QUALITY_EXACT}
+          WHEN users.username_lower LIKE #{escaped_prefix} THEN #{Chat::ChannelFetcher::MATCH_QUALITY_PREFIX}
+          ELSE #{Chat::ChannelFetcher::MATCH_QUALITY_PARTIAL}
+        END AS match_quality
+      SQL
+
+      user_search.select(select_sql).reorder("match_quality ASC, users.username_lower ASC")
     end
   end
 end

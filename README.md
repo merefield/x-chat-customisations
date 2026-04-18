@@ -15,6 +15,7 @@ audit follow-up for that row.
 | --- | --- | --- | --- | --- | --- |
 | Explicit mention notification level | Adds a fourth channel notification level, `explicit_mention`. Users on this level still receive direct `@username` mentions, but opt out of broadcast-style mention notifications such as `@all` and `@here`. This feature depends on forked chat support for the extra enum value and client-side menu options, plus plugin-side notification handling. | Core still has only `never`, `mention`, and `always`, so the extra enum remains a fork responsibility. |  | Yes | Yes |
 | Explicit mention settings and labels | Extends the channel notification settings UI to show the custom `explicit_mention` option and relabels the normal `mention` option with username-aware wording. The sidebar notification submenu also uses plugin-specific translation keys when the customisations plugin is enabled. | Core moved notification controls into newer settings and sidebar components, so the customization now rides those extension points instead of the older route implementation. |  | Yes | Yes |
+| Staff DM member limit bypass in user-selection flows | Keeps staff able to select individual users above `chat_max_direct_message_users` in the new-group and add-members composers. The plugin owns the effective limit override, while the fork still provides the `maxMembers` template seam used by the new-group flow. | Core backend DM policies already exempt staff from the limit, but the message-creator UI still uses the raw site setting unless the plugin overrides those components. | User-group chatables still use core `can_chat` serialization and are not expanded by this override. | Yes | Yes |
 | Channel creation default category | Prefills the create-channel modal with the category configured by `x_chat_customisations_channel_creation_default_category_id`, instead of making the user start from a blank category chooser every time. | Core still starts the modal without a custom default category. |  | No | Yes |
 | Channel creation forces threading on | Defaults `threadingEnabled` to `true` in the create-channel modal and hides the threading toggle in that flow, so channels created through this UI path are threaded without presenting threading as a choice. | Core now handles unchecked booleans cleanly in the modal, so only the product choice to force threading remains custom. |  | No | Yes |
 | Private channel bootstrap from dummy category | When a channel is created against the configured dummy private category, the plugin creates a new read-restricted category and a matching group named after the requested channel, rewrites the create request to use that new category, and makes the creator an owner of the new group. This turns one configured placeholder category into a private-channel creation mechanism. | Core channel creation still only creates channels against an existing category; it does not synthesize a category/group pair on demand. | Create path is now transactional; no migration required. | No | Yes |
@@ -35,6 +36,19 @@ audit follow-up for that row.
 - Rows marked `Yes / Yes` need coordinated maintenance across both repositories.
 - Rows marked `No / Yes` can usually be evolved entirely inside this plugin.
 - The chat fork also contains a small number of extension seams, such as the
-  overridable `notificationLevels` getter and the `maxMembers` template hook,
-  that are not listed as standalone features here because they do not change
-  user-visible behavior on their own.
+  overridable `notificationLevels` getter, that are not listed as standalone
+  features here because they do not change user-visible behavior on their own.
+
+## Chat Fork Dependencies
+
+These forked chat files are current dependencies for `x-chat-customisations`.
+They should be reviewed whenever the chat fork is rebased or the plugin is
+changed.
+
+| Fork file | Dependency note |
+| --- | --- |
+| `plugins/chat/app/models/chat/user_chat_channel_membership.rb` | Defines the `explicit_mention` notification level enum value used by plugin-side notification filtering and UI labels. |
+| `plugins/chat/assets/javascripts/discourse/services/chat-api.js` | Documents and accepts `explicit_mention` as a notification-level payload in the client API surface used by the plugin-enhanced settings flows. |
+| `plugins/chat/assets/javascripts/discourse/components/chat-channel-sidebar-context-notification-submenu.gjs` | Renders the sidebar notification submenu that the plugin relabels and augments for `explicit_mention`. |
+| `plugins/chat/assets/javascripts/discourse/components/chat/routes/channel-info-settings.gjs` | Exposes the overridable `notificationLevels` getter that `x-chat-customisations` extends in the settings route UI. |
+| `plugins/chat/assets/javascripts/discourse/components/chat/message-creator/new-group.gjs` | Uses the overridable `this.maxMembers` template hook that the plugin now drives for staff DM member-limit bypass in the new-group composer. |

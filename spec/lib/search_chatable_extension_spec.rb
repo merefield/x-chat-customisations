@@ -33,6 +33,10 @@ RSpec.describe Chat::SearchChatable do
       expect(result.users).to include(non_following_user)
     end
 
+    it "preserves match_quality for serializer consumers" do
+      expect(result.users).to all(respond_to(:match_quality))
+    end
+
     context "when the excluded channel is not visible to the acting user" do
       let(:channel_id) { private_channel.id }
 

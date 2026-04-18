@@ -171,6 +171,33 @@ RSpec.describe "Chat channel memberships" do
           ).notification_level,
         ).to eq("mention")
       end
+
+      it "allows staff to add members above the direct message user limit" do
+        channel = Fabricate(:direct_message_channel, users: [admin, third_user], group: false)
+
+        SiteSetting.chat_max_direct_message_users = 1
+
+        post "/chat/api/channels/#{channel.id}/memberships",
+             params: {
+               usernames: [other_user.username],
+             }
+
+        expect(response.status).to eq(200)
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: channel.id,
+            following: true,
+            user_id: other_user.id,
+          ),
+        ).to be_present
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: channel.id,
+            following: true,
+            user_id: other_user.id,
+          ).notification_level,
+        ).to eq("mention")
+      end
     end
   end
 

@@ -71,7 +71,6 @@ export function buildSidebarNotificationLevelOptions({
       `chat-channel-sidebar-link-menu__notification-level-${level.value.replaceAll("_", "-")}`,
   }));
 }
-
 export function effectiveMaxMembers({
   currentUser,
   maxMembers,
@@ -87,7 +86,6 @@ export function effectiveMaxMembers({
 export function canStaffBypassGroupLimit({ currentUser, chatable }) {
   return currentUser?.staff && chatable?.type === "group";
 }
-
 export default {
   name: "x-chat-init",
   initialize() {
@@ -140,8 +138,6 @@ export default {
             }
           }
       );
-
-      api.modifyClass(
         "component:chat/message-creator/new-group",
         (Superclass) =>
           class extends Superclass {
@@ -186,8 +182,6 @@ export default {
             }
           }
       );
-
-      api.modifyClass(
         "component:chat/message-creator/members-selector",
         (Superclass) =>
           class extends Superclass {
