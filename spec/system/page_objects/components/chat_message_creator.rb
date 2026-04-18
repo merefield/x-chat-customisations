@@ -38,6 +38,17 @@ module PageObjects
           self
         end
 
+        def select_group(group)
+          component.find(MEMBERS_INPUT_SELECTOR).fill_in(with: group.name)
+          click_row(group)
+          self
+        end
+
+        def select_result(chatable)
+          click_row(chatable)
+          self
+        end
+
         def create_group
           component.find(CREATE_GROUP_SELECTOR).click
           self

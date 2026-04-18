@@ -7,6 +7,8 @@ RSpec.describe Chat::SearchChatable do
     fab!(:current_user, :user) { Fabricate(:user, username: "bob-user") }
     fab!(:following_user, :user) { Fabricate(:user, username: "sam-user") }
     fab!(:non_following_user, :user) { Fabricate(:user, username: "charlie-user") }
+    fab!(:exact_match_user, :user) { Fabricate(:user, username: "sam") }
+    fab!(:prefix_match_user, :user) { Fabricate(:user, username: "samwise") }
     fab!(:public_channel, :chat_channel)
     fab!(:private_group, :group)
     fab!(:private_channel, :private_category_channel) do
@@ -24,6 +26,8 @@ RSpec.describe Chat::SearchChatable do
       public_channel.add(current_user)
       public_channel.add(following_user)
       public_channel.add(non_following_user).update!(following: false)
+      public_channel.add(exact_match_user).update!(following: false)
+      public_channel.add(prefix_match_user).update!(following: false)
 
       private_channel.add(following_user)
     end
@@ -42,6 +46,39 @@ RSpec.describe Chat::SearchChatable do
 
       it "does not apply the membership exclusion filter" do
         expect(result.users).to include(following_user)
+      end
+    end
+
+    context "when the excluded channel is visible and private" do
+      let(:channel_id) { private_channel.id }
+
+      before do
+        Fabricate(:group_user, group: private_group, user: current_user)
+        private_channel.add(non_following_user).update!(following: false)
+      end
+
+      it "excludes only users following the private channel" do
+        expect(result.users).not_to include(following_user)
+        expect(result.users).to include(non_following_user)
+      end
+    end
+
+    context "when searching with a term" do
+      let(:params) { { term: "sam", include_users: true } }
+
+      it "orders exact matches before prefix matches" do
+        expect(result.users.first).to eq(exact_match_user)
+        expect(result.users.first.match_quality).to eq(Chat::ChannelFetcher::MATCH_QUALITY_EXACT)
+
+        prefix_results =
+          result.users.select do |user|
+            user.match_quality == Chat::ChannelFetcher::MATCH_QUALITY_PREFIX
+          end
+
+        expect(prefix_results.map(&:username)).to include(
+          following_user.username,
+          prefix_match_user.username,
+        )
       end
     end
   end

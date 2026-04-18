@@ -32,6 +32,21 @@ RSpec.describe "X Chat Customisations direct message member limits" do
     expect(page).to have_current_path(%r{/chat/c/staff-room/\d+})
   end
 
+  it "allows staff to create a group message from a user group above the configured member limit" do
+    group_member_1 = Fabricate(:user)
+    group_member_2 = Fabricate(:user)
+    member_group = Fabricate(:public_group, users: [group_member_1, group_member_2])
+
+    sign_in(admin)
+    visit("/")
+    chat_page.prefers_full_page
+    chat_page.open_new_message
+    message_creator.filter(member_group.name)
+    message_creator.select_result(member_group).fill_group_name("staff-group-room").create_group
+
+    expect(page).to have_current_path(%r{/chat/c/staff-group-room/\d+})
+  end
+
   it "allows staff to add a member above the configured member limit" do
     existing_member = Fabricate(:user)
     extra_member_1 = Fabricate(:user)

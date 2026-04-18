@@ -5,6 +5,14 @@ describe Jobs::Chat::NotifyMentioned do
 
   fab!(:author, :user) { Fabricate(:user, refresh_auto_groups: true) }
   fab!(:mentioned_user, :user) { Fabricate(:user, refresh_auto_groups: true) }
+  fab!(:mentioned_group) do
+    Fabricate(
+      :public_group,
+      name: "notifygroup",
+      users: [mentioned_user],
+      mentionable_level: Group::ALIAS_LEVELS[:everyone],
+    )
+  end
   fab!(:public_channel, :category_channel)
 
   before do
@@ -54,6 +62,19 @@ describe Jobs::Chat::NotifyMentioned do
       )
 
     Fabricate(:here_chat_mention, chat_message: message)
+    message
+  end
+
+  def create_group_mention_message
+    message =
+      Fabricate(
+        :chat_message,
+        chat_channel: public_channel,
+        user: author,
+        created_at: 10.minutes.ago,
+      )
+
+    Fabricate(:group_chat_mention, chat_message: message, group: mentioned_group)
     message
   end
 
@@ -118,6 +139,23 @@ describe Jobs::Chat::NotifyMentioned do
         message: message,
         to_notify_ids_map: {
           here_mentions: [mentioned_user.id],
+        },
+      )
+
+    expect(desktop_notification).to be_nil
+    expect(latest_notification).to be_nil
+  end
+
+  it "suppresses notifications for group mentions" do
+    message = create_group_mention_message
+
+    PostAlerter.expects(:push_notification).never
+
+    desktop_notification =
+      track_desktop_notification(
+        message: message,
+        to_notify_ids_map: {
+          mentioned_group.name.to_sym => [mentioned_user.id],
         },
       )
 
