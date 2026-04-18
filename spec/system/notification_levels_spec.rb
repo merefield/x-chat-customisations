@@ -49,10 +49,50 @@ RSpec.describe "X Chat Customisations notification levels" do
 
     chat_page.visit_channel(channel_1)
 
-    expect {
-      chat_sidebar_page.open_notification_settings(channel_1)
-      chat_sidebar_page.set_notification_level("explicit-mention")
-    }.to change { membership.reload.notification_level }.from("mention").to("explicit_mention")
+    notification_menu = chat_sidebar_page.open_notification_settings(channel_1)
+
+    expect(
+      notification_menu.has_option?(
+        ".chat-channel-sidebar-link-menu__notification-level-mention",
+        I18n.t(
+          "js.x_chat_customisations.notification_levels.mention",
+          username: current_user.username,
+        ),
+      ),
+    ).to eq(true)
+    expect(
+      notification_menu.has_option?(
+        ".chat-channel-sidebar-link-menu__notification-level-explicit-mention",
+        I18n.t(
+          "js.x_chat_customisations.notification_levels.explicit_mention",
+          username: current_user.username,
+        ),
+      ),
+    ).to eq(true)
+
+    expect { chat_sidebar_page.set_notification_level("explicit-mention") }.to change {
+      membership.reload.notification_level
+    }.from("mention").to("explicit_mention")
+  end
+
+  it "falls back to core sidebar labels when the plugin is disabled" do
+    SiteSetting.x_chat_customisations_enabled = false
+
+    chat_page.visit_channel(channel_1)
+
+    notification_menu = chat_sidebar_page.open_notification_settings(channel_1)
+
+    expect(
+      notification_menu.has_option?(
+        ".chat-channel-sidebar-link-menu__notification-level-mention",
+        I18n.t("js.chat.notification_levels.mention"),
+      ),
+    ).to eq(true)
+    expect(
+      notification_menu.has_no_option?(
+        ".chat-channel-sidebar-link-menu__notification-level-explicit-mention",
+      ),
+    ).to eq(true)
   end
 
   it "suppresses @all notifications while keeping direct mentions after selecting explicit mention" do
