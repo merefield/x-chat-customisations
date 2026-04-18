@@ -243,8 +243,6 @@ export default {
             }
           }
       );
-
-      api.modifyClass(
         "component:chat/routes/channel-info-members",
         (Superclass) =>
           class extends Superclass {

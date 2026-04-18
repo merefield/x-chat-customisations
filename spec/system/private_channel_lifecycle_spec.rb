@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
+require_relative "page_objects/pages/chat_channel_members"
+
 RSpec.describe "X Chat Customisations private channel lifecycle" do
   fab!(:admin, :admin)
   fab!(:member, :user) { Fabricate(:user, username: "private_member") }
   fab!(:dummy_private_category) { Fabricate(:category, name: "Private Channel Template") }
 
   let(:chat_page) { PageObjects::Pages::Chat.new }
+  let(:channel_members_page) { PageObjects::Pages::ChatChannelMembers.new }
   let(:channel_modal) { PageObjects::Modals::ChatChannelCreate.new }
   let(:channel_name) { "Private Lifecycle" }
   let(:channel_slug) { "private-lifecycle" }
@@ -52,17 +55,13 @@ RSpec.describe "X Chat Customisations private channel lifecycle" do
     expect(Chat::UserChatChannelMembership.exists?(chat_channel: channel, user: member)).to eq(true)
     expect(GroupUser.exists?(group:, user: member)).to eq(true)
 
-    chat_page.visit_channel_members(channel)
+    channel_members_page.open(channel)
 
-    expect(chat_page).to have_no_add_member_button
+    expect(channel_members_page).to have_add_member_button
 
-    find(".c-channel-members__filter").fill_in(with: member.username)
+    channel_members_page.filter_members(member.username).remove_member(member.username)
 
-    within(".c-channel-members__list-item.-member", text: member.username) do
-      find(".-remove-member").click
-    end
-
-    expect(page).to have_no_css(".c-channel-members__list-item.-member", text: member.username)
+    expect(channel_members_page).to have_no_member(member.username)
 
     chat_page.visit_channel_settings(channel)
     click_button(I18n.t("js.chat.channel_settings.delete_channel"))

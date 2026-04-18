@@ -18,9 +18,11 @@ register_svg_icon "people-group" if respond_to?(:register_svg_icon)
 
 after_initialize do
   require_relative "lib/chat_customisations/channels_memberships_by_username_controller"
+  require_relative "lib/chat_customisations/guardian_extension"
   require_relative "lib/chat_customisations/remove_user_from_channel_extension"
 
   reloadable_patch do
+    Guardian.prepend(ChatCustomisations::GuardianExtension)
     Chat::Mailer.singleton_class.prepend(ChatCustomisations::ChatMailerExtension)
     Chat::ChatableGroupSerializer.prepend(ChatCustomisations::ChatableGroupSerializerExtension)
     Chat::CategoryChannel.include(ChatCustomisations::CategoryChannelExtension)

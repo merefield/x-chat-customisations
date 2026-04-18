@@ -284,10 +284,9 @@ RSpec.describe "Chat channel memberships" do
         expect(
           Chat::UserChatChannelMembership.find_by(
             chat_channel_id: private_channel.id,
-            following: true,
             user_id: other_user.id,
           ),
-        ).to be_nil
+        ).to have_attributes(following: false)
       end
 
       it "works for private channel via the user-id endpoint" do
@@ -308,10 +307,44 @@ RSpec.describe "Chat channel memberships" do
         expect(
           Chat::UserChatChannelMembership.find_by(
             chat_channel_id: private_channel.id,
+            user_id: other_user.id,
+          ),
+        ).to have_attributes(following: false)
+      end
+
+      it "works for public channel via the user-id endpoint when the user is moderator" do
+        sign_in(moderator)
+
+        delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.id}.json"
+
+        expect(response.status).to eq(200)
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: public_channel.id,
             following: true,
             user_id: other_user.id,
           ),
         ).to be_nil
+      end
+
+      it "works for private channel via the user-id endpoint when the user is moderator" do
+        Fabricate(:group_user, group: private_group, user: moderator)
+        sign_in(moderator)
+
+        delete "/chat/api/channels/#{private_channel.id}/memberships/#{other_user.id}.json"
+
+        expect(response.status).to eq(200)
+        expect(
+          GroupUser.where(
+            group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
+          ).count,
+        ).to eq(1)
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: private_channel.id,
+            user_id: other_user.id,
+          ),
+        ).to have_attributes(following: false)
       end
     end
     describe "failure" do
