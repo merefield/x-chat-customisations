@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
+require_relative "page_objects/components/chat_message_creator"
+require_relative "page_objects/pages/chat_channel_members"
+
 RSpec.describe "X Chat Customisations direct message member limits" do
   fab!(:admin, :admin)
 
   let(:chat_page) { PageObjects::Pages::Chat.new }
+  let(:channel_members_page) { PageObjects::Pages::ChatChannelMembers.new }
+  let(:message_creator) { chat_page.message_creator }
 
   before do
     SiteSetting.x_chat_customisations_enabled = true
@@ -11,28 +16,18 @@ RSpec.describe "X Chat Customisations direct message member limits" do
     SiteSetting.direct_message_enabled_groups = Group::AUTO_GROUPS[:everyone]
     SiteSetting.chat_max_direct_message_users = 1
     chat_system_bootstrap
-    sign_in(admin)
-  end
-
-  def select_member(user)
-    find(".chat-message-creator__members-input").fill_in(with: user.username)
-    find(".chat-message-creator__list-item[data-identifier='u-#{user.id}']").click
   end
 
   it "allows staff to create a group message above the configured member limit" do
     extra_member_1 = Fabricate(:user)
     extra_member_2 = Fabricate(:user)
 
+    sign_in(admin)
     visit("/")
     chat_page.prefers_full_page
     chat_page.open_new_message
-    find("#new-group-chat").click
-    find(".chat-message-creator__new-group-header__input").fill_in(with: "staff-room")
-
-    select_member(extra_member_1)
-    select_member(extra_member_2)
-
-    find(".create-chat-group").click
+    message_creator.start_new_group.fill_group_name("staff-room")
+    message_creator.select_user(extra_member_1).select_user(extra_member_2).create_group
 
     expect(page).to have_current_path(%r{/chat/c/staff-room/\d+})
   end
@@ -49,21 +44,29 @@ RSpec.describe "X Chat Customisations direct message member limits" do
         group: false,
       )
 
-    chat_page.visit_channel_members(channel)
+    sign_in(admin)
+    channel_members_page.open(channel)
 
-    expect(chat_page).to have_add_member_button
-
-    find(".c-channel-members__list-item.-add-member").click
-    select_member(extra_member_1)
-    page.execute_script("document.querySelector('.add-to-channel').click()")
+    expect(channel_members_page).to have_add_member_button
+    channel_members_page.add_member(extra_member_1)
 
     wait_for(timeout: 5) do
       Chat::UserChatChannelMembership.exists?(chat_channel: channel, user: extra_member_1)
     end
 
-    chat_page.visit_channel_members(channel)
+    channel_members_page.open(channel)
 
     expect(page).to have_current_path("/chat/c/#{channel.slug}/#{channel.id}/info/members")
     expect(page).to have_css(".c-channel-members__list-item.-member", text: extra_member_1.username)
+  end
+
+  it "still hides group message creation for non-staff at the configured member limit" do
+    sign_in(Fabricate(:user))
+
+    visit("/")
+    chat_page.prefers_full_page
+    chat_page.open_new_message
+
+    expect(message_creator).to have_no_new_group_option
   end
 end

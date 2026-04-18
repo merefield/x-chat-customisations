@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require File.expand_path("../../../../../chat/spec/system/page_objects/chat/chat", __dir__)
+
 module PageObjects
   module Pages
     class ChatChannelMembers < Chat

@@ -346,6 +346,26 @@ RSpec.describe "Chat channel memberships" do
           ),
         ).to have_attributes(following: false)
       end
+
+      it "works for private channel via the username endpoint when the user is moderator" do
+        Fabricate(:group_user, group: private_group, user: moderator)
+        sign_in(moderator)
+
+        delete "/chat/api/channels/#{private_channel.id}/memberships/by-username/#{other_user.username.downcase}.json"
+
+        expect(response.status).to eq(204)
+        expect(
+          GroupUser.where(
+            group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
+          ).count,
+        ).to eq(1)
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: private_channel.id,
+            user_id: other_user.id,
+          ),
+        ).to have_attributes(following: false)
+      end
     end
     describe "failure" do
       it "fails if the user is not staff" do

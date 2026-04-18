@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "page_objects/pages/chat_channel_settings"
+
 RSpec.describe "X Chat Customisations notification levels" do
   fab!(:current_user, :user)
   fab!(:other_user, :user)
@@ -7,6 +9,7 @@ RSpec.describe "X Chat Customisations notification levels" do
 
   let(:chat_page) { PageObjects::Pages::Chat.new }
   let(:chat_sidebar_page) { PageObjects::Pages::ChatSidebar.new }
+  let(:channel_settings_page) { PageObjects::Pages::ChatChannelSettings.new }
   let(:toasts) { PageObjects::Components::Toasts.new }
   let(:chat_mention_notifications) do
     Notification.where(user: current_user, notification_type: Notification.types[:chat_mention])
@@ -20,8 +23,16 @@ RSpec.describe "X Chat Customisations notification levels" do
     sign_in(current_user)
   end
 
-  def create_message(message)
-    Fabricate(:chat_message, chat_channel: channel_1, user: other_user, message:, use_service: true)
+  let(:create_message) do
+    ->(message) do
+      Fabricate(
+        :chat_message,
+        chat_channel: channel_1,
+        user: other_user,
+        message:,
+        use_service: true,
+      )
+    end
   end
 
   it "adds explicit mention to the channel settings notification selector" do
@@ -30,10 +41,7 @@ RSpec.describe "X Chat Customisations notification levels" do
     chat_page.visit_channel_settings(channel_1)
 
     expect {
-      select_kit =
-        PageObjects::Components::SelectKit.new(".c-channel-settings__notifications-selector")
-      select_kit.expand
-      select_kit.select_row_by_name(
+      channel_settings_page.select_notification_level_by_name(
         I18n.t(
           "js.x_chat_customisations.notification_levels.explicit_mention",
           username: current_user.username,
@@ -42,6 +50,26 @@ RSpec.describe "X Chat Customisations notification levels" do
 
       expect(toasts).to have_success(I18n.t("js.saved"))
     }.to change { membership.reload.notification_level }.from("mention").to("explicit_mention")
+  end
+
+  it "falls back to core settings labels when the plugin is disabled" do
+    SiteSetting.x_chat_customisations_enabled = false
+
+    chat_page.visit_channel_settings(channel_1)
+
+    expect(
+      channel_settings_page.has_notification_level_option?(
+        I18n.t("js.chat.notification_levels.mention"),
+      ),
+    ).to eq(true)
+    expect(
+      channel_settings_page.has_no_notification_level_option?(
+        I18n.t(
+          "js.x_chat_customisations.notification_levels.explicit_mention",
+          username: current_user.username,
+        ),
+      ),
+    ).to eq(true)
   end
 
   it "adds explicit mention to the sidebar notification menu" do
@@ -109,14 +137,14 @@ RSpec.describe "X Chat Customisations notification levels" do
       chat_sidebar_page.set_notification_level("explicit-mention")
     }.to change { membership.reload.notification_level }.from("mention").to("explicit_mention")
 
-    create_message("this is fine @all")
+    create_message.call("this is fine @all")
 
     expect(chat_mention_notifications.count).to eq(0)
 
     visit("/discuss")
     expect(page).to have_no_css(".chat-header-icon .chat-channel-unread-indicator.-urgent")
 
-    direct_message = create_message("this is fine @#{current_user.username}")
+    direct_message = create_message.call("this is fine @#{current_user.username}")
 
     expect(chat_mention_notifications.count).to eq(1)
 
