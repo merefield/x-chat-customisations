@@ -5,7 +5,7 @@ module ChatCustomisations
       name = args[:channel_name]
       super
       if name
-        group_name = name.parameterize(separator: '_')
+        group_name = name.parameterize(separator: "_")
         group = Group.find_by(name: group_name)
         category = Category.find_by(name: name)
         if group

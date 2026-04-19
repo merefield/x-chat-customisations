@@ -6,8 +6,10 @@ div.chat-modal-create-channel__control.-threading-toggle {
   li.c-channel-members__list-item {
     display: flex;
     flex-direction: row;
+
     button {
       margin-left: auto;
+
       svg {
         margin-right: 0;
       }

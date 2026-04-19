@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 module ChatCustomisations
   module NotifyMentionedJobExtension
-
     NOTIFICATION_LEVELS = { never: 0, mention: 1, always: 2, explicit_mention: 3 }.freeze
 
     def build_data_for(membership, identifier_type:)
@@ -21,10 +20,12 @@ module ChatCustomisations
 
       return data if identifier_type == :direct_mentions
 
-      return nil if ::Chat::UserChatChannelMembership.find_by(
-        user_id: membership.user_id,
-        chat_channel_id: @chat_channel.id,
-      ).notification_level == "explicit_mention" # Skip if explicit mention is set where user has opted out of here/all mentions
+      if ::Chat::UserChatChannelMembership.find_by(
+           user_id: membership.user_id,
+           chat_channel_id: @chat_channel.id,
+         ).notification_level == "explicit_mention"
+        return nil
+      end # Skip if explicit mention is set where user has opted out of here/all mentions
 
       case identifier_type
       when :here_mentions

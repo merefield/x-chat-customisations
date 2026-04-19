@@ -3,9 +3,7 @@ module ChatCustomisations
   module CategoryChannelExtension
     extend ActiveSupport::Concern
 
-    included do
-      before_validation :default_allow_channel_wide_mentions, on: :create
-    end
+    included { before_validation :default_allow_channel_wide_mentions, on: :create }
 
     private
 
