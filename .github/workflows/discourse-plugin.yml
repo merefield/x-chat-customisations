@@ -346,6 +346,15 @@ jobs:
         working-directory: ${{ env.DISCOURSE_PATH }}
         run: pnpm playwright install --with-deps --no-shell chromium
 
+      - name: Install ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
+          if ! command -v magick >/dev/null && command -v convert >/dev/null; then
+            sudo ln -s "$(command -v convert)" /usr/local/bin/magick
+          fi
+
       - name: Prepare test database
         working-directory: ${{ env.DISCOURSE_PATH }}
         run: |
