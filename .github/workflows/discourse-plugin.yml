@@ -342,6 +342,10 @@ jobs:
           bundle install --jobs 4 --retry 3
           pnpm install --frozen-lockfile
 
+      - name: Ember Build
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: script/assemble_ember_build.rb
+
       - name: Install Playwright
         working-directory: ${{ env.DISCOURSE_PATH }}
         run: pnpm playwright install --with-deps --no-shell chromium
@@ -363,4 +367,14 @@ jobs:
 
       - name: Run system specs
         working-directory: ${{ env.DISCOURSE_PATH }}
-        run: xvfb-run -a bin/rspec plugins/x-chat-customisations/spec/system
+        env:
+          CHECKOUT_TIMEOUT: 10
+        run: >-
+          RAILS_ENABLE_TEST_LOG=1
+          RAILS_TEST_LOG_LEVEL=error
+          bin/turbo_rspec
+          --use-runtime-info
+          --profile=50
+          --verbose
+          --format documentation
+          plugins/x-chat-customisations/spec/system
