@@ -177,12 +177,23 @@ export default {
         "component:chat/message-creator/group",
         (Superclass) =>
           class extends Superclass {
+            @service currentUser;
+            @service siteSettings;
+
             get isDisabled() {
               if (this.currentUser?.staff) {
                 return false;
               }
 
-              return super.isDisabled();
+              if (!this.args.membersCount) {
+                return !this.args.item.enabled;
+              }
+
+              return (
+                this.args.membersCount +
+                  this.args.item.model.chat_enabled_user_count >
+                this.siteSettings.chat_max_direct_message_users
+              );
             }
           }
       );
@@ -243,6 +254,8 @@ export default {
             }
           }
       );
+
+      api.modifyClass(
         "component:chat/routes/channel-info-members",
         (Superclass) =>
           class extends Superclass {

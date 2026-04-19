@@ -49,6 +49,18 @@ module PageObjects
           self
         end
 
+        def has_enabled_result?(chatable)
+          listing?(chatable, enabled: true)
+        end
+
+        def has_disabled_result?(chatable)
+          listing?(chatable, disabled: true)
+        end
+
+        def has_no_disabled_result?(chatable)
+          not_listing?(chatable, disabled: true)
+        end
+
         def create_group
           component.find(CREATE_GROUP_SELECTOR).click
           self
