@@ -65,7 +65,7 @@ jobs:
     if: needs.schedule-gate.outputs.should_run == 'true'
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_DB: discourse_test
           POSTGRES_PASSWORD: postgres
@@ -162,7 +162,7 @@ jobs:
     if: needs.schedule-gate.outputs.should_run == 'true'
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_DB: discourse_test
           POSTGRES_PASSWORD: postgres
@@ -263,7 +263,7 @@ jobs:
     if: needs.schedule-gate.outputs.should_run == 'true'
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_DB: discourse_test
           POSTGRES_PASSWORD: postgres
