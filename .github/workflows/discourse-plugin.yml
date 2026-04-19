@@ -350,10 +350,10 @@ jobs:
         working-directory: ${{ env.DISCOURSE_PATH }}
         run: pnpm playwright install --with-deps --no-shell chromium
 
-      - name: Install ImageMagick
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y imagemagick
+          sudo apt-get install -y imagemagick redis-server
 
           if ! command -v magick >/dev/null && command -v convert >/dev/null; then
             sudo ln -s "$(command -v convert)" /usr/local/bin/magick
