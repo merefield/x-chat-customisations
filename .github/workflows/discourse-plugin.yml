@@ -335,16 +335,16 @@ jobs:
           cache: pnpm
           cache-dependency-path: ${{ env.DISCOURSE_PATH }}/pnpm-lock.yaml
 
-      - name: Set up Chrome
-        id: chrome
-        uses: browser-actions/setup-chrome@v1
-
       - name: Install dependencies
         working-directory: ${{ env.DISCOURSE_PATH }}
         run: |
           bundle config path vendor/bundle
           bundle install --jobs 4 --retry 3
           pnpm install --frozen-lockfile
+
+      - name: Install Playwright
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: pnpm playwright install --with-deps --no-shell chromium
 
       - name: Prepare test database
         working-directory: ${{ env.DISCOURSE_PATH }}
@@ -354,6 +354,4 @@ jobs:
 
       - name: Run system specs
         working-directory: ${{ env.DISCOURSE_PATH }}
-        env:
-          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
         run: xvfb-run -a bin/rspec plugins/x-chat-customisations/spec/system
