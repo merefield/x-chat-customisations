@@ -234,6 +234,10 @@ jobs:
           cache: pnpm
           cache-dependency-path: ${{ env.DISCOURSE_PATH }}/pnpm-lock.yaml
 
+      - name: Set PARALLEL_TEST_PROCESSORS for system tests
+        run: |
+          echo "PARALLEL_TEST_PROCESSORS=$(($(nproc) / 2))" >> $GITHUB_ENV
+
       - name: Install dependencies
         working-directory: ${{ env.DISCOURSE_PATH }}
         run: |
@@ -364,6 +368,8 @@ jobs:
         run: |
           bin/rake db:create
           bin/rake db:migrate
+          bin/rake parallel:create
+          bin/rake parallel:migrate
 
       - name: Run system specs
         working-directory: ${{ env.DISCOURSE_PATH }}
