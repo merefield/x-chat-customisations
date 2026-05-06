@@ -13,9 +13,9 @@ module ChatCustomisations
           group.destroy
         end
         if category
-          CategoryGroup.where(category_id: category.id).destroy_all
-          Topic.where(category_id: category.id).destroy_all
-          category.destroy
+          CategoryGroup.where(category_id: category.id).delete_all
+          Topic.where(category_id: category.id).delete_all
+          Category.where(id: category.id).delete_all
         end
       end
     end
