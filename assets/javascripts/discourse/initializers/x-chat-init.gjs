@@ -75,13 +75,12 @@ export function buildSidebarNotificationLevelOptions({
 export function effectiveMaxMembers({
   currentUser,
   maxMembers,
-  membersCount = 0,
 }) {
-  if (!currentUser?.staff) {
-    return maxMembers;
+  if (currentUser?.staff || maxMembers === 0) {
+    return Infinity;
   }
 
-  return Math.max(maxMembers, membersCount + 1);
+  return maxMembers;
 }
 
 export function canStaffBypassGroupLimit({ currentUser, chatable }) {
@@ -151,7 +150,6 @@ export default {
               return effectiveMaxMembers({
                 currentUser: this.currentUser,
                 maxMembers: super.maxMembers,
-                membersCount: this.membersCount,
               });
             }
           }
@@ -167,7 +165,6 @@ export default {
               return effectiveMaxMembers({
                 currentUser: this.currentUser,
                 maxMembers: super.maxMembers,
-                membersCount: this.membersCount,
               });
             }
           }

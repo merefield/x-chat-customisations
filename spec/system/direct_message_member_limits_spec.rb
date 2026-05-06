@@ -18,7 +18,7 @@ RSpec.describe "X Chat Customisations direct message member limits" do
     chat_system_bootstrap
   end
 
-  it "allows staff to create a group message above the configured member limit" do
+  it "allows staff to create a group DM above the configured member limit" do
     extra_member_1 = Fabricate(:user)
     extra_member_2 = Fabricate(:user)
 
@@ -32,7 +32,33 @@ RSpec.describe "X Chat Customisations direct message member limits" do
     expect(page).to have_current_path(%r{/chat/c/staff-room/\d+})
   end
 
-  it "allows staff to create a group message from a user group above the configured member limit" do
+  it "shows staff an infinite group DM member limit" do
+    extra_member_1 = Fabricate(:user)
+
+    sign_in(admin)
+    visit("/")
+    chat_page.prefers_full_page
+    chat_page.open_new_message
+    message_creator.start_new_group.select_user(extra_member_1)
+
+    expect(message_creator).to have_members_count("1/Infinity")
+  end
+
+  it "shows an infinite group DM member limit when the configured limit is zero" do
+    extra_member_1 = Fabricate(:user)
+
+    SiteSetting.chat_max_direct_message_users = 0
+
+    sign_in(admin)
+    visit("/")
+    chat_page.prefers_full_page
+    chat_page.open_new_message
+    message_creator.start_new_group.select_user(extra_member_1)
+
+    expect(message_creator).to have_members_count("1/Infinity")
+  end
+
+  it "allows staff to create a group DM from a user group above the configured member limit" do
     group_member_1 = Fabricate(:user)
     group_member_2 = Fabricate(:user)
     member_group = Fabricate(:public_group, users: [group_member_1, group_member_2])
@@ -90,7 +116,35 @@ RSpec.describe "X Chat Customisations direct message member limits" do
     expect(page).to have_css(".c-channel-members__list-item.-member", text: extra_member_1.username)
   end
 
-  it "still hides group message creation for non-staff at the configured member limit" do
+  it "shows staff an infinite add-member limit when the configured member limit is zero" do
+    existing_member = Fabricate(:user)
+    extra_member_1 = Fabricate(:user)
+
+    SiteSetting.chat_max_direct_message_users = 0
+
+    channel =
+      Fabricate(
+        :direct_message_channel,
+        slug: "staff-zero-limit",
+        users: [admin, existing_member],
+        group: false,
+      )
+
+    sign_in(admin)
+    channel_members_page.open(channel)
+
+    expect(channel_members_page).to have_add_member_button
+    channel_members_page.open_add_member
+
+    expect(page).to have_css(".chat-message-creator__members-count", text: "0/Infinity")
+
+    find(".chat-message-creator__members-input").fill_in(with: extra_member_1.username)
+    find(".chat-message-creator__list-item[data-identifier='u-#{extra_member_1.id}']").click
+
+    expect(page).to have_css(".chat-message-creator__members-count", text: "1/Infinity")
+  end
+
+  it "still hides group DM creation for non-staff at the configured member limit" do
     sign_in(Fabricate(:user))
 
     visit("/")

@@ -61,6 +61,10 @@ module PageObjects
           not_listing?(chatable, disabled: true)
         end
 
+        def has_members_count?(text)
+          component.has_css?(".chat-message-creator__members-count", text: text)
+        end
+
         def create_group
           component.find(CREATE_GROUP_SELECTOR).click
           self

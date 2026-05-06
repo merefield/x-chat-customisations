@@ -1,5 +1,8 @@
 import { module, test } from "qunit";
-import { buildNotificationLevels } from "discourse/plugins/x-chat-customisations/discourse/initializers/x-chat-init";
+import {
+  buildNotificationLevels,
+  effectiveMaxMembers,
+} from "discourse/plugins/x-chat-customisations/discourse/initializers/x-chat-init";
 
 module("X Chat Customisations | Unit | Initializer | x-chat-init", function () {
   test("it relabels mention and inserts explicit mention before always when enabled", function (assert) {
@@ -51,6 +54,36 @@ module("X Chat Customisations | Unit | Initializer | x-chat-init", function () {
     assert.strictEqual(
       result.find((level) => level.value === "mention").name,
       "Only mentions"
+    );
+  });
+
+  test("it reports an infinite direct message member limit for staff", function (assert) {
+    assert.strictEqual(
+      effectiveMaxMembers({
+        currentUser: { staff: true },
+        maxMembers: 3,
+      }),
+      Infinity
+    );
+  });
+
+  test("it reports an infinite direct message member limit when the setting is zero", function (assert) {
+    assert.strictEqual(
+      effectiveMaxMembers({
+        currentUser: { staff: false },
+        maxMembers: 0,
+      }),
+      Infinity
+    );
+  });
+
+  test("it preserves the configured direct message member limit otherwise", function (assert) {
+    assert.strictEqual(
+      effectiveMaxMembers({
+        currentUser: { staff: false },
+        maxMembers: 3,
+      }),
+      3
     );
   });
 });

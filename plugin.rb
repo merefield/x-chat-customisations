@@ -18,6 +18,7 @@ register_svg_icon "people-group" if respond_to?(:register_svg_icon)
 
 after_initialize do
   require_relative "lib/chat_customisations/channels_memberships_by_username_controller"
+  require_relative "lib/chat_customisations/add_users_to_channel_contract_extension"
   require_relative "lib/chat_customisations/guardian_extension"
   require_relative "lib/chat_customisations/remove_user_from_channel_extension"
 
@@ -31,6 +32,7 @@ after_initialize do
     Jobs::Chat::ChannelDelete.prepend(ChatCustomisations::ChannelDeleteJobExtension)
     Chat::Api::ChannelsController.prepend(ChatCustomisations::ApiChannelControllerExtension)
     Chat::AddUsersToChannel.prepend(ChatCustomisations::AddUsersToChannelExtension)
+    ChatCustomisations::AddUsersToChannelContractExtension.remove_usernames_length_validator!
     Chat::RemoveUserFromChannel.prepend(ChatCustomisations::RemoveUserFromChannelExtension)
     Chat::SearchChatable.prepend(ChatCustomisations::SearchChatableExtension)
     Jobs::Chat::NotifyMentioned.prepend(ChatCustomisations::NotifyMentionedJobExtension)
