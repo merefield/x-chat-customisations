@@ -68,14 +68,14 @@ export function buildSidebarNotificationLevelOptions({
     ...level,
     className:
       level.className ||
-      `chat-channel-sidebar-link-menu__notification-level-${level.value.replaceAll("_", "-")}`,
+      `chat-channel-sidebar-link-menu__notification-level-${level.value.replaceAll(
+        "_",
+        "-"
+      )}`,
   }));
 }
 
-export function effectiveMaxMembers({
-  currentUser,
-  maxMembers,
-}) {
+export function effectiveMaxMembers({ currentUser, maxMembers }) {
   if (currentUser?.staff || maxMembers === 0) {
     return Infinity;
   }
