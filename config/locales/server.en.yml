@@ -6,5 +6,8 @@ en:
     x_chat_customisations_channel_creation_default_category_id: "Default category for new channels"
     x_chat_customisations_private_chat_dummy_category_id: "Dummy category for private chat - selecting this will cause a new private category and group to be created, along with a new corresponding chat channel whose members will mirror the group."
   x_chat_customisations:
+    posting_modes:
+      staff_only: "Only staff can post in this channel."
+      staff_only_replies_allowed: "Only staff can post in this channel but replies to staff posts are allowed."
     custom_reasons:
       chat_summary_emails_disabled: "Chat Summary emails are disabled"

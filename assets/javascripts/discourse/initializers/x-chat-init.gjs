@@ -1,6 +1,8 @@
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
+import { ajax } from "discourse/lib/ajax";
+import { popupAjaxError } from "discourse/lib/ajax-error";
 import { withPluginApi } from "discourse/lib/plugin-api";
 import Category from "discourse/models/category";
 import { i18n } from "discourse-i18n";
@@ -83,6 +85,23 @@ export function effectiveMaxMembers({ currentUser, maxMembers }) {
   return maxMembers;
 }
 
+const POSTING_MODES = [
+  {
+    name: i18n("x_chat_customisations.posting_modes.anyone"),
+    value: "anyone",
+  },
+  {
+    name: i18n("x_chat_customisations.posting_modes.staff_only"),
+    value: "staff_only",
+  },
+  {
+    name: i18n(
+      "x_chat_customisations.posting_modes.staff_only_replies_allowed"
+    ),
+    value: "staff_only_replies_allowed",
+  },
+];
+
 export function canStaffBypassGroupLimit({ currentUser, chatable }) {
   return currentUser?.staff && chatable?.type === "group";
 }
@@ -119,6 +138,50 @@ export default {
                 enabled: this.siteSettings.x_chat_customisations_enabled,
                 username: this.currentUser?.username,
               });
+            }
+
+            get shouldRenderPostingModeSection() {
+              return (
+                this.siteSettings.x_chat_customisations_enabled &&
+                this.args.channel.isCategoryChannel &&
+                this.chatGuardian.canEditChatChannel()
+              );
+            }
+
+            get postingModeLabel() {
+              return i18n("x_chat_customisations.posting_modes.label");
+            }
+
+            get postingModeOptions() {
+              return POSTING_MODES;
+            }
+
+            get postingModeValue() {
+              return this.args.channel.xChatPostingMode ?? "anyone";
+            }
+
+            @action
+            async onChangePostingMode(value) {
+              const previousValue = this.args.channel.xChatPostingMode;
+              this.args.channel.xChatPostingMode = value;
+
+              try {
+                const result = await ajax(
+                  `/chat/api/channels/${this.args.channel.id}/posting-mode`,
+                  {
+                    type: "PUT",
+                    data: {
+                      posting_mode: value,
+                    },
+                  }
+                );
+                this.args.channel.xChatPostingMode =
+                  result.channel.x_chat_posting_mode;
+                this.toasts.success({ data: { message: i18n("saved") } });
+              } catch (error) {
+                this.args.channel.xChatPostingMode = previousValue;
+                popupAjaxError(error);
+              }
             }
           }
       );

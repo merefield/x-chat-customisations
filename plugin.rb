@@ -18,12 +18,21 @@ register_svg_icon "people-group" if respond_to?(:register_svg_icon)
 
 after_initialize do
   require_relative "lib/chat_customisations/channels_memberships_by_username_controller"
+  require_relative "lib/chat_customisations/channels_posting_mode_controller"
   require_relative "lib/chat_customisations/add_users_to_channel_contract_extension"
   require_relative "lib/chat_customisations/guardian_extension"
+  require_relative "lib/chat_customisations/channel_posting_mode"
+  require_relative "lib/chat_customisations/channel_serializer_extension"
+  require_relative "lib/chat_customisations/message_creation_policy_extension"
   require_relative "lib/chat_customisations/remove_user_from_channel_extension"
 
   reloadable_patch do
     Guardian.prepend(ChatCustomisations::GuardianExtension)
+    Chat::Channel.include(ChatCustomisations::ChannelPostingMode)
+    Chat::ChannelSerializer.prepend(ChatCustomisations::ChannelSerializerExtension)
+    Chat::Channel::Policy::MessageCreation.prepend(
+      ChatCustomisations::MessageCreationPolicyExtension,
+    )
     Chat::Mailer.singleton_class.prepend(ChatCustomisations::ChatMailerExtension)
     Chat::ChatableGroupSerializer.prepend(ChatCustomisations::ChatableGroupSerializerExtension)
     Chat::CategoryChannel.include(ChatCustomisations::CategoryChannelExtension)
@@ -45,6 +54,7 @@ after_initialize do
              :constraints => {
                username: RouteFormat.username,
              }
+      put "/channels/:channel_id/posting-mode" => "channels_posting_mode#update"
     end
   end
 
