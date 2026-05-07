@@ -1,7 +1,6 @@
 name: Latest Integration
 
 on:
-  push:
   pull_request:
   schedule:
     - cron: "0 0 * * *"
