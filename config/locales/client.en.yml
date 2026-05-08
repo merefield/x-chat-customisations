@@ -1,5 +1,11 @@
 en:
   js:
+    chat:
+      notification_levels:
+        mention: "My Mentions + @all posts"
+    user:
+      preferences_nav:
+        users: "DM Settings"
     x_chat_customisations:
       title: "Chat Customisations"
       notification_levels:
