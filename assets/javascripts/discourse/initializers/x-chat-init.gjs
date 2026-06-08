@@ -106,10 +106,24 @@ export function canStaffBypassGroupLimit({ currentUser, chatable }) {
   return currentUser?.staff && chatable?.type === "group";
 }
 
+export function defaultBrowseRoute() {
+  return "chat.browse.all";
+}
+
 export default {
   name: "x-chat-init",
   initialize() {
     withPluginApi((api) => {
+      api.modifyClass(
+        "route:chat.browse.index",
+        (Superclass) =>
+          class extends Superclass {
+            afterModel() {
+              this.router.replaceWith(defaultBrowseRoute());
+            }
+          }
+      );
+
       api.modifyClass(
         "component:chat/modal/create-channel",
         (Superclass) =>

@@ -20,6 +20,7 @@ after_initialize do
   require_relative "lib/chat_customisations/channels_memberships_by_username_controller"
   require_relative "lib/chat_customisations/channels_posting_mode_controller"
   require_relative "lib/chat_customisations/add_users_to_channel_contract_extension"
+  require_relative "lib/chat_customisations/channel_fetcher_extension"
   require_relative "lib/chat_customisations/guardian_extension"
   require_relative "lib/chat_customisations/channel_posting_mode"
   require_relative "lib/chat_customisations/channel_serializer_extension"
@@ -44,6 +45,7 @@ after_initialize do
     ChatCustomisations::AddUsersToChannelContractExtension.remove_usernames_length_validator!
     Chat::RemoveUserFromChannel.prepend(ChatCustomisations::RemoveUserFromChannelExtension)
     Chat::SearchChatable.prepend(ChatCustomisations::SearchChatableExtension)
+    Chat::ChannelFetcher.singleton_class.prepend(ChatCustomisations::ChannelFetcherExtension)
     Jobs::Chat::NotifyMentioned.prepend(ChatCustomisations::NotifyMentionedJobExtension)
   end
 
