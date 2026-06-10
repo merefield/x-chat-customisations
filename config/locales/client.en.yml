@@ -1,5 +1,8 @@
 en:
   js:
+    chat:
+      ignore_channel_wide_mention:
+        title: "Ignore @all channel-wide mentions"
     user:
       preferences_nav:
         users: "DM Settings"
