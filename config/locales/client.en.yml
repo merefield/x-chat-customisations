@@ -6,7 +6,7 @@ en:
     x_chat_customisations:
       title: "Chat Customisations"
       notification_levels:
-        mention: "For Mentions (@%{username}) & Broadcasts (@all)"
+        mention: "My Mentions + @all Posts"
         explicit_mention: "Only For My Mentions (@%{username})"
       posting_modes:
         label: "Posting"
