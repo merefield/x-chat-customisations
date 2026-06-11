@@ -2,6 +2,10 @@ div.chat-modal-create-channel__control.-threading-toggle {
   display: none;
 }
 
+.c-navbar__star-channel-button {
+  display: none;
+}
+
 .c-routes.--channel-info-members {
   li.c-channel-members__list-item {
     display: flex;
