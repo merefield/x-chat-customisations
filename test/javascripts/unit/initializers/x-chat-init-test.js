@@ -25,7 +25,7 @@ module("X Chat Customisations | Unit | Initializer | x-chat-init", function () {
     );
     assert.strictEqual(
       result.find((level) => level.value === "mention").name,
-      "For Mentions (@robert) & Broadcasts (@all)"
+      "My Mentions + @all Posts"
     );
     assert.strictEqual(
       result.find((level) => level.value === "explicit_mention").name,

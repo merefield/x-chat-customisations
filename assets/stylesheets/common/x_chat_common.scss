@@ -6,6 +6,43 @@ div.chat-modal-create-channel__control.-threading-toggle {
   display: none;
 }
 
+.new-user-wrapper
+  .user-navigation
+  .nav-pills
+  li.user-nav__preferences-calendar-subscriptions,
+.new-user-wrapper
+  .user-navigation
+  .nav-pills
+  li:has(a[href$="/preferences/calendar-subscriptions"]) {
+  display: none !important;
+}
+
+.user-preferences-page .form-kit__field[data-name="chat_enabled"],
+.user-preferences-page
+  .form-kit__field[data-name="only_chat_push_notifications"],
+.user-preferences-page .form-kit__field[data-name="chat_sound"],
+.user-preferences-page
+  .form-kit__field[data-name="chat_header_indicator_preference"],
+.user-preferences-page .form-kit__field[data-name="chat_separate_sidebar_mode"],
+.user-preferences-page .form-kit__field[data-name="chat_send_shortcut"],
+.user-preferences-page
+  .form-kit__section:has(
+    .form-kit__field[data-name="chat_quick_reaction_type"]
+  ),
+.user-preferences-page
+  .form-kit__section:has(.form-kit__field[data-name="chat_send_shortcut"]) {
+  display: none;
+}
+
+.user-preferences-page
+  .form-kit__section:has(
+    .form-kit__field[data-name="ignore_channel_wide_mention"]
+  ) {
+  .form-kit__section-header {
+    display: none;
+  }
+}
+
 .c-routes.--channel-info-members {
   li.c-channel-members__list-item {
     display: flex;
