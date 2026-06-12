@@ -1,5 +1,8 @@
-import DBreadcrumbsItem from "discourse/ui-kit/d-breadcrumbs-item";
-import DPageSubheader from "discourse/ui-kit/d-page-subheader";
+// TODO: Harmonise plugin lint dependencies with the target Discourse runtime.
+// eslint-disable-next-line
+import DBreadcrumbsItem from "discourse/components/d-breadcrumbs-item";
+// eslint-disable-next-line
+import DPageSubheader from "discourse/components/d-page-subheader";
 import { i18n } from "discourse-i18n";
 import XChatDefaultChannelForm from "discourse/plugins/x-chat-customisations/admin/components/x-chat-default-channel-form";
 
