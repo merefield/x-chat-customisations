@@ -56,6 +56,45 @@ RSpec.describe "Chat channel memberships" do
         ).to be_nil
       end
 
+      it "posts an invite notice when silent member adds are disabled" do
+        expect {
+          post "/chat/api/channels/#{public_channel.id}/memberships",
+               params: {
+                 usernames: [other_user.username],
+               }
+        }.to change { Chat::Message.where(chat_channel_id: public_channel.id).count }.by(1)
+
+        expect(response.status).to eq(200)
+        expect(Chat::Message.last.message).to eq(
+          I18n.t(
+            "chat.channel.users_invited_to_channel",
+            invited_users: "@#{other_user.username}",
+            inviting_user: "@#{admin.username}",
+            count: 1,
+          ),
+        )
+      end
+
+      it "adds users without posting an invite notice when silent member adds are enabled" do
+        public_channel.x_chat_silent_member_adds = true
+
+        expect {
+          post "/chat/api/channels/#{public_channel.id}/memberships",
+               params: {
+                 usernames: [other_user.username],
+               }
+        }.not_to change { Chat::Message.where(chat_channel_id: public_channel.id).count }
+
+        expect(response.status).to eq(200)
+        expect(
+          Chat::UserChatChannelMembership.find_by(
+            chat_channel_id: public_channel.id,
+            following: true,
+            user_id: other_user.id,
+          ),
+        ).to be_present
+      end
+
       it "works for private channel" do
         expect(
           GroupUser.where(

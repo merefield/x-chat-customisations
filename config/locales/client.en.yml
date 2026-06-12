@@ -23,3 +23,5 @@ en:
         anyone: "Anyone can post"
         staff_only: "Only staff can post"
         staff_only_replies_allowed: "Only staff can post - replies allowed"
+      silent_member_adds:
+        label: "Add users silently"

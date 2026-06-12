@@ -20,10 +20,12 @@ after_initialize do
   require_relative "lib/chat_customisations/admin/default_channel_controller"
   require_relative "lib/chat_customisations/channels_memberships_by_username_controller"
   require_relative "lib/chat_customisations/channels_posting_mode_controller"
+  require_relative "lib/chat_customisations/channels_silent_member_adds_controller"
   require_relative "lib/chat_customisations/add_users_to_channel_contract_extension"
   require_relative "lib/chat_customisations/channel_fetcher_extension"
   require_relative "lib/chat_customisations/guardian_extension"
   require_relative "lib/chat_customisations/channel_posting_mode"
+  require_relative "lib/chat_customisations/channel_silent_member_adds"
   require_relative "lib/chat_customisations/channel_serializer_extension"
   require_relative "lib/chat_customisations/message_creation_policy_extension"
   require_relative "lib/chat_customisations/remove_user_from_channel_extension"
@@ -31,6 +33,7 @@ after_initialize do
   reloadable_patch do
     Guardian.prepend(ChatCustomisations::GuardianExtension)
     Chat::Channel.include(ChatCustomisations::ChannelPostingMode)
+    Chat::Channel.include(ChatCustomisations::ChannelSilentMemberAdds)
     Chat::ChannelSerializer.prepend(ChatCustomisations::ChannelSerializerExtension)
     Chat::Channel::Policy::MessageCreation.prepend(
       ChatCustomisations::MessageCreationPolicyExtension,
@@ -58,6 +61,7 @@ after_initialize do
                username: RouteFormat.username,
              }
       put "/channels/:channel_id/posting-mode" => "channels_posting_mode#update"
+      put "/channels/:channel_id/silent-member-adds" => "channels_silent_member_adds#update"
     end
   end
 

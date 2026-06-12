@@ -96,5 +96,13 @@ module ChatCustomisations
         unique_by: %i[direct_message_channel_id user_id],
       )
     end
+
+    def notice_channel(guardian:, channel:, target_users:)
+      if guardian.user.staff? && channel.category_channel? && channel.x_chat_silent_member_adds
+        return
+      end
+
+      super
+    end
   end
 end

@@ -3,7 +3,7 @@
 module ChatCustomisations
   module ChannelSerializerExtension
     def self.prepended(base)
-      base.attributes :x_chat_posting_mode
+      base.attributes :x_chat_posting_mode, :x_chat_silent_member_adds
     end
 
     def x_chat_posting_mode
@@ -11,6 +11,14 @@ module ChatCustomisations
     end
 
     def include_x_chat_posting_mode?
+      object.category_channel?
+    end
+
+    def x_chat_silent_member_adds
+      object.x_chat_silent_member_adds
+    end
+
+    def include_x_chat_silent_member_adds?
       object.category_channel?
     end
   end

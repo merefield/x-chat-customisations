@@ -215,8 +215,20 @@ export default {
               );
             }
 
+            get shouldRenderSilentMemberAddsSection() {
+              return (
+                this.siteSettings.x_chat_customisations_enabled &&
+                this.args.channel.isCategoryChannel &&
+                this.chatGuardian.canEditChatChannel()
+              );
+            }
+
             get postingModeLabel() {
               return i18n("x_chat_customisations.posting_modes.label");
+            }
+
+            get silentMemberAddsLabel() {
+              return i18n("x_chat_customisations.silent_member_adds.label");
             }
 
             get postingModeOptions() {
@@ -247,6 +259,30 @@ export default {
                 this.toasts.success({ data: { message: i18n("saved") } });
               } catch (error) {
                 this.args.channel.xChatPostingMode = previousValue;
+                popupAjaxError(error);
+              }
+            }
+
+            @action
+            async onToggleSilentMemberAdds(value) {
+              const previousValue = this.args.channel.xChatSilentMemberAdds;
+              this.args.channel.xChatSilentMemberAdds = !value;
+
+              try {
+                const result = await ajax(
+                  `/chat/api/channels/${this.args.channel.id}/silent-member-adds`,
+                  {
+                    type: "PUT",
+                    data: {
+                      enabled: !value,
+                    },
+                  }
+                );
+                this.args.channel.xChatSilentMemberAdds =
+                  result.channel.x_chat_silent_member_adds;
+                this.toasts.success({ data: { message: i18n("saved") } });
+              } catch (error) {
+                this.args.channel.xChatSilentMemberAdds = previousValue;
                 popupAjaxError(error);
               }
             }
