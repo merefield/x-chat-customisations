@@ -25,13 +25,13 @@ RSpec.describe "X Chat Customisations channel posting modes" do
 
     expect(settings_page).to have_posting_mode_selector
 
-    expect {
-      settings_page.select_posting_mode_by_name(
-        I18n.t("js.x_chat_customisations.posting_modes.staff_only_replies_allowed"),
-      )
-    }.to change { channel.reload.x_chat_posting_mode }.from("anyone").to(
-      "staff_only_replies_allowed",
+    expect(channel.reload.x_chat_posting_mode).to eq("anyone")
+
+    settings_page.select_posting_mode_by_name(
+      I18n.t("js.x_chat_customisations.posting_modes.staff_only_replies_allowed"),
     )
+
+    wait_for(timeout: 5) { channel.reload.x_chat_posting_mode == "staff_only_replies_allowed" }
   end
 
   it "does not show the posting mode selector for direct messages" do
