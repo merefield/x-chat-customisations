@@ -19,3 +19,4 @@ plugins:
   x_chat_customisations_default_chat_channel_id:
     client: true
     default: 0
+    max: 9223372036854775807

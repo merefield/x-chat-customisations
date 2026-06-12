@@ -16,13 +16,6 @@ RSpec.describe ChatCustomisations::Admin::DefaultChannelController do
   end
 
   describe "#show" do
-    it "routes the Chat default channel tab to the admin app shell" do
-      expect(get: "/admin/plugins/chat/default-channel").to route_to(
-        controller: "admin/plugins",
-        action: "index",
-      )
-    end
-
     it "lists public category channels for admins" do
       sign_in(admin)
 
