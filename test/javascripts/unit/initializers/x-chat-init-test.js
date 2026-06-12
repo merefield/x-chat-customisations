@@ -2,6 +2,7 @@ import { module, test } from "qunit";
 import {
   buildNotificationLevels,
   effectiveMaxMembers,
+  replaceWithDefaultDesktopChatChannel,
 } from "discourse/plugins/x-chat-customisations/discourse/initializers/x-chat-init";
 
 module("X Chat Customisations | Unit | Initializer | x-chat-init", function () {
@@ -85,5 +86,40 @@ module("X Chat Customisations | Unit | Initializer | x-chat-init", function () {
       }),
       3
     );
+  });
+
+  test("it redirects desktop Chat entry to the configured default channel", async function (assert) {
+    const channel = { routeModels: ["general", 2] };
+    const route = {
+      site: { desktopView: true },
+      siteSettings: {
+        x_chat_customisations_default_chat_channel_id: 2,
+      },
+      chatChannelsManager: {
+        find(channelId) {
+          assert.strictEqual(channelId, 2);
+          return Promise.resolve(channel);
+        },
+      },
+      router: {
+        replaceWith(routeName, ...models) {
+          assert.strictEqual(routeName, "chat.channel");
+          assert.deepEqual(models, channel.routeModels);
+        },
+      },
+    };
+
+    assert.true(await replaceWithDefaultDesktopChatChannel(route));
+  });
+
+  test("it keeps core Chat routing without a desktop default channel", async function (assert) {
+    const route = {
+      site: { desktopView: true },
+      siteSettings: {
+        x_chat_customisations_default_chat_channel_id: 0,
+      },
+    };
+
+    assert.false(await replaceWithDefaultDesktopChatChannel(route));
   });
 });

@@ -17,6 +17,7 @@ require_relative "lib/chat_customisations/engine"
 register_svg_icon "people-group" if respond_to?(:register_svg_icon)
 
 after_initialize do
+  require_relative "lib/chat_customisations/admin/default_channel_controller"
   require_relative "lib/chat_customisations/channels_memberships_by_username_controller"
   require_relative "lib/chat_customisations/channels_posting_mode_controller"
   require_relative "lib/chat_customisations/add_users_to_channel_contract_extension"
@@ -58,6 +59,17 @@ after_initialize do
              }
       put "/channels/:channel_id/posting-mode" => "channels_posting_mode#update"
     end
+  end
+
+  Discourse::Application.routes.append do
+    get "/admin/plugins/chat/default-channel" => "admin/plugins#index",
+        :constraints => AdminConstraint.new
+    get "/admin/plugins/x-chat-customisations/default-channel" =>
+          "chat_customisations/admin/default_channel#show",
+        :constraints => AdminConstraint.new
+    put "/admin/plugins/x-chat-customisations/default-channel" =>
+          "chat_customisations/admin/default_channel#update",
+        :constraints => AdminConstraint.new
   end
 
   Jobs::Chat::AutoJoinUsers.every 10.minutes

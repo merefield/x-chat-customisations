@@ -110,10 +110,63 @@ export function defaultBrowseRoute() {
   return "chat.browse.all";
 }
 
+export async function replaceWithDefaultDesktopChatChannel(route) {
+  const defaultChannelId = Number(
+    route.siteSettings?.x_chat_customisations_default_chat_channel_id
+  );
+
+  if (!route.site?.desktopView || !defaultChannelId) {
+    return false;
+  }
+
+  try {
+    const channel = await route.chatChannelsManager.find(defaultChannelId);
+
+    if (channel?.routeModels) {
+      route.router.replaceWith("chat.channel", ...channel.routeModels);
+      return true;
+    }
+  } catch {
+    // Fall back to core Chat routing when the configured channel is unavailable.
+  }
+
+  return false;
+}
+
 export default {
   name: "x-chat-init",
   initialize() {
     withPluginApi((api) => {
+      api.modifyClass(
+        "route:chat.index",
+        (Superclass) =>
+          class extends Superclass {
+            async redirect() {
+              if (await replaceWithDefaultDesktopChatChannel(this)) {
+                return;
+              }
+
+              return super.redirect(...arguments);
+            }
+          }
+      );
+
+      api.modifyClass(
+        "route:chat.channels",
+        (Superclass) =>
+          class extends Superclass {
+            @service siteSettings;
+
+            async beforeModel() {
+              if (await replaceWithDefaultDesktopChatChannel(this)) {
+                return;
+              }
+
+              return super.beforeModel(...arguments);
+            }
+          }
+      );
+
       api.modifyClass(
         "route:chat.browse.index",
         (Superclass) =>

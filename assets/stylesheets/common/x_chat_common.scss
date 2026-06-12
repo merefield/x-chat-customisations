@@ -6,6 +6,12 @@ div.chat-modal-create-channel__control.-threading-toggle {
   display: none;
 }
 
+.x-chat-default-channel-form {
+  form {
+    margin-bottom: 1rem;
+  }
+}
+
 .new-user-wrapper
   .user-navigation
   .nav-pills

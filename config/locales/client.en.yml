@@ -8,6 +8,13 @@ en:
         users: "DM Settings"
     x_chat_customisations:
       title: "Chat Customisations"
+      admin:
+        default_channel:
+          title: "Default channel"
+          description: "Choose the channel users land on when opening Chat on desktop."
+          channel: "Channel"
+          none: "No default channel"
+          saved: "Default channel saved"
       notification_levels:
         mention: "My Mentions + @all Posts"
         explicit_mention: "Only For My Mentions (@%{username})"
