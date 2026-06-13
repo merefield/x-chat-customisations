@@ -196,6 +196,46 @@ RSpec.describe "Chat channel memberships" do
         expect(GroupUser.exists?(group: private_group, user: other_user)).to eq(true)
       end
 
+      it "restores a removed public channel member when they are added back" do
+        membership = public_channel.add(other_user)
+
+        delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.id}.json"
+
+        expect(response.status).to eq(200)
+        expect(membership.reload.following).to eq(false)
+
+        post "/chat/api/channels/#{public_channel.id}/memberships",
+             params: {
+               usernames: [other_user.username],
+             }
+
+        expect(response.status).to eq(200)
+        expect(membership.reload.following).to eq(true)
+      end
+
+      it "allows moderators to restore removed private channel members" do
+        membership = private_channel.add(other_user)
+        Fabricate(:group_user, group: private_group, user: moderator)
+        Fabricate(:group_user, group: private_group, user: other_user)
+
+        delete "/chat/api/channels/#{private_channel.id}/memberships/#{other_user.id}.json"
+
+        expect(response.status).to eq(200)
+        expect(membership.reload.following).to eq(false)
+        expect(GroupUser.exists?(group: private_group, user: other_user)).to eq(false)
+
+        sign_in(moderator)
+
+        post "/chat/api/channels/#{private_channel.id}/memberships",
+             params: {
+               usernames: [other_user.username],
+             }
+
+        expect(response.status).to eq(200)
+        expect(membership.reload.following).to eq(true)
+        expect(GroupUser.exists?(group: private_group, user: other_user)).to eq(true)
+      end
+
       it "succeeds if the user is moderator" do
         sign_in(moderator)
         post "/chat/api/channels/#{public_channel.id}/memberships",
