@@ -333,6 +333,48 @@ export default {
                 maxMembers: super.maxMembers,
               });
             }
+
+            @action
+            async saveGroupMembers() {
+              try {
+                this.loadingSlider.transitionStarted();
+
+                const usernames = this.args.members
+                  .filter((member) => member.type === "user")
+                  .map((member) => member.model.username);
+
+                const groups = this.args.members
+                  .filter((member) => member.type === "group")
+                  .map((member) => member.model.name);
+
+                const result = await this.chatApi.addMembersToChannel(
+                  this.args.channel.id,
+                  {
+                    usernames,
+                    groups,
+                  }
+                );
+
+                if (Number.isInteger(result?.memberships_count)) {
+                  this.args.channel.membershipsCount = result.memberships_count;
+                }
+
+                this.toasts.success({ data: { message: i18n("saved") } });
+
+                if (this.args.close) {
+                  this.args.close(result);
+                } else {
+                  this.router.transitionTo(
+                    "chat.channel",
+                    ...this.args.channel.routeModels
+                  );
+                }
+              } catch (error) {
+                popupAjaxError(error);
+              } finally {
+                this.loadingSlider.transitionEnded();
+              }
+            }
           }
       );
 
@@ -427,6 +469,32 @@ export default {
                 super.canAddMembers ||
                 (this.currentUser?.staff && this.args.channel.isCategoryChannel)
               );
+            }
+
+            @action
+            hideAddMember(result) {
+              if (Number.isInteger(result?.memberships_count)) {
+                this.args.channel.membershipsCount = result.memberships_count;
+                this.updatedAt = Date.now();
+                this.load();
+              }
+
+              return super.hideAddMember(...arguments);
+            }
+
+            @action
+            async removeMember(user) {
+              const result = await this.chatApi.removeMemberFromChannel(
+                this.args.channel.id,
+                user.id
+              );
+
+              if (Number.isInteger(result?.memberships_count)) {
+                this.args.channel.membershipsCount = result.memberships_count;
+              }
+
+              this.updatedAt = Date.now();
+              this.load();
             }
           }
       );

@@ -33,6 +33,7 @@ RSpec.describe "Chat channel memberships" do
              }
 
         expect(response.status).to eq(200)
+        expect(response.parsed_body["memberships_count"]).to eq(1)
 
         expect(
           Chat::UserChatChannelMembership.find_by(
@@ -86,6 +87,7 @@ RSpec.describe "Chat channel memberships" do
         }.not_to change { Chat::Message.where(chat_channel_id: public_channel.id).count }
 
         expect(response.status).to eq(200)
+        expect(response.parsed_body["memberships_count"]).to eq(1)
         expect(
           Chat::UserChatChannelMembership.find_by(
             chat_channel_id: public_channel.id,
@@ -418,6 +420,7 @@ RSpec.describe "Chat channel memberships" do
         delete "/chat/api/channels/#{private_channel.id}/memberships/#{other_user.id}.json"
 
         expect(response.status).to eq(200)
+        expect(response.parsed_body["memberships_count"]).to eq(0)
         expect(
           GroupUser.where(
             group_id: CategoryGroup.find_by(category_id: private_channel.chatable.id).group_id,
@@ -437,6 +440,7 @@ RSpec.describe "Chat channel memberships" do
         delete "/chat/api/channels/#{public_channel.id}/memberships/#{other_user.id}.json"
 
         expect(response.status).to eq(200)
+        expect(response.parsed_body["memberships_count"]).to eq(0)
         expect(
           Chat::UserChatChannelMembership.find_by(
             chat_channel_id: public_channel.id,

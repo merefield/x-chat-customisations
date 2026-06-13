@@ -19,6 +19,7 @@ register_svg_icon "people-group" if respond_to?(:register_svg_icon)
 after_initialize do
   require_relative "lib/chat_customisations/admin/default_channel_controller"
   require_relative "lib/chat_customisations/channels_memberships_by_username_controller"
+  require_relative "lib/chat_customisations/channels_memberships_controller_extension"
   require_relative "lib/chat_customisations/channels_posting_mode_controller"
   require_relative "lib/chat_customisations/channels_silent_member_adds_controller"
   require_relative "lib/chat_customisations/add_users_to_channel_contract_extension"
@@ -45,6 +46,9 @@ after_initialize do
     Chat::TrashChannel.prepend(ChatCustomisations::TrashChannelExtension)
     Jobs::Chat::ChannelDelete.prepend(ChatCustomisations::ChannelDeleteJobExtension)
     Chat::Api::ChannelsController.prepend(ChatCustomisations::ApiChannelControllerExtension)
+    Chat::Api::ChannelsMembershipsController.prepend(
+      ChatCustomisations::ChannelsMembershipsControllerExtension,
+    )
     Chat::AddUsersToChannel.prepend(ChatCustomisations::AddUsersToChannelExtension)
     ChatCustomisations::AddUsersToChannelContractExtension.remove_usernames_length_validator!
     Chat::RemoveUserFromChannel.prepend(ChatCustomisations::RemoveUserFromChannelExtension)

@@ -42,6 +42,10 @@ module PageObjects
         page.has_no_css?(".c-channel-members__list-item.-member", text: username)
       end
 
+      def has_member_count?(count)
+        page.has_css?(".c-channel-info__member-count", text: "(#{count})")
+      end
+
       private
 
       def within_member_row(username, &block)

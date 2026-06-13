@@ -21,6 +21,8 @@ RSpec.describe "X Chat Customisations channel member capabilities" do
 
     private_channel.add(moderator)
     private_channel.add(existing_member)
+    private_channel.update!(user_count_stale: true)
+    Jobs::Chat::UpdateChannelUserCount.new.execute(chat_channel_id: private_channel.id)
 
     sign_in(moderator)
   end
@@ -29,6 +31,7 @@ RSpec.describe "X Chat Customisations channel member capabilities" do
     channel_members_page.open(private_channel)
 
     expect(channel_members_page).to have_add_member_button
+    expect(channel_members_page).to have_member_count(2)
 
     channel_members_page.add_member(added_member)
 
@@ -36,19 +39,23 @@ RSpec.describe "X Chat Customisations channel member capabilities" do
       Chat::UserChatChannelMembership.exists?(chat_channel: private_channel, user: added_member)
     end
 
+    expect(channel_members_page).to have_member_count(3)
     expect(GroupUser.exists?(group: private_group, user: added_member)).to eq(true)
   end
 
   it "allows staff to remove members from a private category-backed channel" do
-    Fabricate(:group_user, group: private_group, user: added_member)
-    membership = private_channel.add(added_member)
+    membership =
+      Chat::UserChatChannelMembership.find_by!(chat_channel: private_channel, user: existing_member)
 
-    channel_members_page.open(private_channel).filter_members(added_member.username)
-    channel_members_page.remove_member(added_member.username)
+    channel_members_page.open(private_channel).filter_members(existing_member.username)
+    expect(channel_members_page).to have_member_count(2)
+
+    channel_members_page.remove_member(existing_member.username)
 
     wait_for(timeout: 5) { membership.reload.following == false }
 
-    expect(channel_members_page).to have_no_member(added_member.username)
-    expect(GroupUser.exists?(group: private_group, user: added_member)).to eq(false)
+    expect(channel_members_page).to have_member_count(1)
+    expect(channel_members_page).to have_no_member(existing_member.username)
+    expect(GroupUser.exists?(group: private_group, user: existing_member)).to eq(false)
   end
 end
