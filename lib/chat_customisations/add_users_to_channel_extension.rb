@@ -59,6 +59,26 @@ module ChatCustomisations
         return
       end
 
+      target_user_ids = target_users.map(&:id)
+      refollowed_user_ids =
+        ::Chat::UserChatChannelMembership.where(
+          chat_channel_id: channel.id,
+          user_id: target_user_ids,
+          following: false,
+        ).pluck(:user_id)
+
+      if refollowed_user_ids.present?
+        ::Chat::UserChatChannelMembership.where(
+          chat_channel_id: channel.id,
+          user_id: refollowed_user_ids,
+        ).update_all(
+          following: true,
+          muted: false,
+          notification_level: only_mentions,
+          updated_at: Time.zone.now,
+        )
+      end
+
       context[:added_user_ids] = ::Chat::UserChatChannelMembership
         .insert_all(
           memberships,
@@ -67,6 +87,7 @@ module ChatCustomisations
         )
         .select { |row| row["inserted"] }
         .map { |row| row["user_id"] }
+        .then { |inserted_user_ids| (inserted_user_ids + refollowed_user_ids).uniq }
 
       added_users = target_users.select { |user| context.added_user_ids.include?(user.id) }
 
