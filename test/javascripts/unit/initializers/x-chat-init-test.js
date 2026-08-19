@@ -122,4 +122,15 @@ module("X Chat Customisations | Unit | Initializer | x-chat-init", function () {
 
     assert.false(await replaceWithDefaultDesktopChatChannel(route));
   });
+
+  test("it keeps core Chat routing on mobile when a desktop default is configured", async function (assert) {
+    const route = {
+      site: { desktopView: false },
+      siteSettings: {
+        x_chat_customisations_default_chat_channel_id: 2,
+      },
+    };
+
+    assert.false(await replaceWithDefaultDesktopChatChannel(route));
+  });
 });

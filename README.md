@@ -49,6 +49,26 @@ audit follow-up for that row.
   overridable `notificationLevels` getter, that are not listed as standalone
   features here because they do not change user-visible behavior on their own.
 
+## Test coverage
+
+Continuous integration is pinned to Discourse `v2026.4.2` and the matching
+`latest` branch of the Chat fork. It runs the plugin's Ruby, rake-task, QUnit,
+and system test suites. `about.json` declares Chat as a required test plugin so
+targeted QUnit runs include the forked extension seams.
+
+The following regression coverage closes the previously identified non-CSS
+gaps in this inventory:
+
+| Behavior | Regression coverage |
+| --- | --- |
+| Chat Preferences identifies channel-wide mentions as `@all` | `spec/system/chat_preferences_spec.rb` renders the preference and asserts its user-facing label. |
+| The configured default Chat channel is desktop-only | `spec/system/default_chat_channel_spec.rb` covers the desktop redirect and the unchanged mobile `/chat/channels` landing page; `test/javascripts/unit/initializers/x-chat-init-test.js` covers both initializer branches directly. |
+| Private-channel teardown removes all generated backing data | `spec/system/private_channel_lifecycle_spec.rb` creates the private channel through the UI and explicitly checks removal of its channel, category-group join, category topic, category, and group. |
+| Seen-state rake tasks work in single-site and multisite modes | `spec/tasks/x_chat_spec.rb` invokes both tasks with `RAILS_DB` set and unset, and verifies the resulting user state. |
+
+Pure CSS visibility customisations are intentionally outside this functional
+regression list.
+
 ## Chat Fork Dependencies
 
 These forked chat files are current dependencies for `x-chat-customisations`.

@@ -1,4 +1,4 @@
-name: Latest Integration
+name: Discourse v2026.4.2 Integration
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ permissions:
 env:
   DISCOURSE_PATH: discourse
   DISCOURSE_REPOSITORY: discourse/discourse
-  DISCOURSE_REF: latest
+  DISCOURSE_REF: v2026.4.2
   CHAT_REPOSITORY: merefield/chat
   CHAT_REF: latest
   PLUGIN_REPOSITORY: merefield/x-chat-customisations
@@ -86,7 +86,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - name: Checkout Discourse latest
+      - name: Checkout pinned Discourse
         uses: actions/checkout@v4
         with:
           repository: ${{ env.DISCOURSE_REPOSITORY }}
@@ -183,7 +183,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - name: Checkout Discourse latest
+      - name: Checkout pinned Discourse
         uses: actions/checkout@v4
         with:
           repository: ${{ env.DISCOURSE_REPOSITORY }}
@@ -255,8 +255,10 @@ jobs:
         run: >-
           bin/rspec
           plugins/x-chat-customisations/spec/lib
+          plugins/x-chat-customisations/spec/jobs
           plugins/x-chat-customisations/spec/requests
           plugins/x-chat-customisations/spec/services
+          plugins/x-chat-customisations/spec/tasks
 
   system:
     name: System Specs
@@ -288,7 +290,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - name: Checkout Discourse latest
+      - name: Checkout pinned Discourse
         uses: actions/checkout@v4
         with:
           repository: ${{ env.DISCOURSE_REPOSITORY }}
@@ -369,6 +371,10 @@ jobs:
           bin/rake db:migrate
           bin/rake parallel:create
           bin/rake parallel:migrate
+
+      - name: Run QUnit tests
+        working-directory: ${{ env.DISCOURSE_PATH }}
+        run: bin/qunit --standalone --target x-chat-customisations
 
       - name: Run system specs
         working-directory: ${{ env.DISCOURSE_PATH }}

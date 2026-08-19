@@ -38,6 +38,8 @@ RSpec.describe "X Chat Customisations private channel lifecycle" do
     channel = Chat::Channel.find_by!(slug: channel_slug)
     category = Category.find_by!(name: channel_name)
     group = Group.find_by!(name: channel_name.parameterize(separator: "_"))
+    category_group = CategoryGroup.find_by!(category:, group:)
+    category_topic = Fabricate(:topic, category:)
 
     expect(channel.chatable_id).to eq(category.id)
     expect(category.read_restricted).to eq(true)
@@ -73,6 +75,8 @@ RSpec.describe "X Chat Customisations private channel lifecycle" do
     Jobs::Chat::ChannelDelete.new.execute(chat_channel_id: channel.id, channel_name: channel.name)
 
     expect(Chat::Channel.find_by(id: channel.id)).to be_nil
+    expect(CategoryGroup.find_by(id: category_group.id)).to be_nil
+    expect(Topic.find_by(id: category_topic.id)).to be_nil
     expect(Category.find_by(id: category.id)).to be_nil
     expect(Group.find_by(id: group.id)).to be_nil
   end

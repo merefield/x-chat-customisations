@@ -30,6 +30,15 @@ RSpec.describe "X Chat Customisations default chat channel" do
     expect(page).to have_current_path(chat.channel_path(default_channel.slug, default_channel.id))
   end
 
+  it "keeps the normal channel-list landing page on mobile", mobile: true do
+    SiteSetting.x_chat_customisations_default_chat_channel_id = default_channel.id
+    sign_in(current_user)
+
+    visit("/chat")
+
+    expect(page).to have_current_path("/chat/channels")
+  end
+
   it "uses the channel an admin chooses on the Default channel settings page" do
     sign_in(admin)
 
