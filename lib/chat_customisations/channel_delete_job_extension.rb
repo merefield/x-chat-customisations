@@ -5,7 +5,7 @@ module ChatCustomisations
       name = args[:channel_name]
       super
       if name
-        group_name = name.parameterize(separator: '_')
+        group_name = name.parameterize(separator: "_")
         group = Group.find_by(name: group_name)
         category = Category.find_by(name: name)
         if group
@@ -13,9 +13,9 @@ module ChatCustomisations
           group.destroy
         end
         if category
-          CategoryGroup.where(category_id: category.id).destroy_all
-          Topic.where(category_id: category.id).destroy_all
-          category.destroy
+          CategoryGroup.where(category_id: category.id).delete_all
+          Topic.where(category_id: category.id).delete_all
+          Category.where(id: category.id).delete_all
         end
       end
     end

@@ -1,24 +1,44 @@
 # frozen_string_literal: true
 module ChatCustomisations
   module AddUsersToChannelExtension
-
     def can_add_users_to_channel(guardian:, channel:)
-      guardian.user.staff? ||
-      (channel.joined_by?(guardian.user) &&
-       channel.direct_message_channel? &&
-       channel.chatable.group)
+      return true if guardian.user.staff? && channel.category_channel?
+
+      channel.joined_by?(guardian.user) && channel.direct_message_channel? &&
+        (channel.chatable.group? || channel.messages_count == 0)
     end
 
-    def fetch_target_users(params:, channel:)
-      ::Chat::UsersFromUsernamesAndGroupsQuery.call(
-        usernames: params.usernames,
-        groups: params.groups,
-        excluded_user_ids: channel.chatable.is_a?(Category) ? [] : channel.chatable.direct_message_users.pluck(:user_id),
-        dm_channel: channel.direct_message_channel?,
-      )
+    def fetch_target_users(params:, channel:, guardian:)
+      target_groups =
+        if params.groups.present?
+          Group
+            .where(name: params.groups)
+            .visible_groups(guardian.user)
+            .members_visible_groups(guardian.user)
+            .pluck(:name)
+        end
+
+      target_users =
+        ::Chat::UsersFromUsernamesAndGroupsQuery.call(
+          usernames: params.usernames,
+          groups: target_groups,
+          excluded_user_ids:
+            (
+              if channel.direct_message_channel?
+                channel.chatable.direct_message_users.pluck(:user_id)
+              else
+                []
+              end
+            ),
+          dm_channel: channel.direct_message_channel?,
+        )
+
+      return target_users if !channel.direct_message_channel?
+
+      target_users + channel.chatable.users.where.not(id: guardian.user)
     end
 
-    def upsert_memberships(channel:, target_users:)
+    def create_memberships(channel:, target_users:)
       only_mentions = ::Chat::UserChatChannelMembership::NOTIFICATION_LEVELS[:mention]
 
       memberships =
@@ -39,14 +59,37 @@ module ChatCustomisations
         return
       end
 
+      target_user_ids = target_users.map(&:id)
+      refollowed_user_ids =
+        ::Chat::UserChatChannelMembership.where(
+          chat_channel_id: channel.id,
+          user_id: target_user_ids,
+          following: false,
+        ).pluck(:user_id)
+
+      if refollowed_user_ids.present?
+        ::Chat::UserChatChannelMembership.where(
+          chat_channel_id: channel.id,
+          user_id: refollowed_user_ids,
+        ).update_all(
+          following: true,
+          muted: false,
+          notification_level: only_mentions,
+          updated_at: Time.zone.now,
+        )
+      end
+
       context[:added_user_ids] = ::Chat::UserChatChannelMembership
-        .upsert_all(
+        .insert_all(
           memberships,
           unique_by: %i[user_id chat_channel_id],
           returning: Arel.sql("user_id, (xmax = '0') as inserted"),
         )
         .select { |row| row["inserted"] }
         .map { |row| row["user_id"] }
+        .then { |inserted_user_ids| (inserted_user_ids + refollowed_user_ids).uniq }
+
+      added_users = target_users.select { |user| context.added_user_ids.include?(user.id) }
 
       if channel.chatable.is_a?(Category) && channel.chatable.read_restricted
         cg = CategoryGroup.find_by(category_id: channel.chatable.id)
@@ -55,12 +98,14 @@ module ChatCustomisations
           group = cg.group
           existing_user_ids = group.user_ids
 
-          member_candidates = target_users.reject { |user| existing_user_ids.include?(user.id) }
+          member_candidates = added_users.reject { |user| existing_user_ids.include?(user.id) }
           group.users << member_candidates unless member_candidates.empty?
         end
       end
 
-      ::Chat::DirectMessageUser.upsert_all(
+      return if !channel.direct_message_channel?
+
+      ::Chat::DirectMessageUser.insert_all(
         context.added_user_ids.map do |id|
           {
             user_id: id,
@@ -71,6 +116,14 @@ module ChatCustomisations
         end,
         unique_by: %i[direct_message_channel_id user_id],
       )
+    end
+
+    def notice_channel(guardian:, channel:, target_users:)
+      if guardian.user.staff? && channel.category_channel? && channel.x_chat_silent_member_adds
+        return
+      end
+
+      super
     end
   end
 end

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 module ChatCustomisations
   module SearchChatableExtension
-
     SEARCH_RESULT_LIMIT = 20
 
     def search_users(params, guardian)
@@ -20,14 +19,33 @@ module ChatCustomisations
       user_search = user_search.includes(:user_option)
 
       if params.excluded_memberships_channel_id
-        user_search =
-          user_search.where(
-            "NOT EXISTS (SELECT 1 FROM user_chat_channel_memberships WHERE user_id = users.id AND following = 'true' AND chat_channel_id = ?)",
-            params.excluded_memberships_channel_id,
-          )
+        channel =
+          Chat::Channel.includes(:chatable).find_by(id: params.excluded_memberships_channel_id)
+
+        if channel && guardian.can_preview_chat_channel?(channel)
+          user_search =
+            user_search.where(
+              "NOT EXISTS (SELECT 1 FROM user_chat_channel_memberships WHERE user_id = users.id AND following = 'true' AND chat_channel_id = ?)",
+              params.excluded_memberships_channel_id,
+            )
+        end
       end
 
-      user_search
+      filter_term = params.term.to_s
+      like_term = User.sanitize_sql_like(filter_term)
+      escaped_exact = User.connection.quote(filter_term)
+      escaped_prefix = User.connection.quote("#{like_term}%")
+
+      select_sql = <<~SQL
+        users.*,
+        CASE
+          WHEN users.username_lower = #{escaped_exact} THEN #{Chat::ChannelFetcher::MATCH_QUALITY_EXACT}
+          WHEN users.username_lower LIKE #{escaped_prefix} THEN #{Chat::ChannelFetcher::MATCH_QUALITY_PREFIX}
+          ELSE #{Chat::ChannelFetcher::MATCH_QUALITY_PARTIAL}
+        END AS match_quality
+      SQL
+
+      user_search.select(select_sql).reorder("match_quality ASC, users.username_lower ASC")
     end
   end
 end

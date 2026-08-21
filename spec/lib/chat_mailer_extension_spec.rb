@@ -1,26 +1,37 @@
 # frozen_string_literal: true
 
-require 'sidekiq/testing'
+require "sidekiq/testing"
 
 describe Chat::Mailer do
   fab!(:user) { Fabricate(:user, last_seen_at: 1.hour.ago) }
   fab!(:user_1) { Fabricate(:user, last_seen_at: 1.hour.ago) }
   fab!(:user_2) { Fabricate(:user, last_seen_at: 1.hour.ago) }
   fab!(:user_3) { Fabricate(:user, last_seen_at: 1.hour.ago) }
-  fab!(:other) { Fabricate(:user) }
+  fab!(:other, :user)
 
   fab!(:group) do
-    Fabricate(:group, mentionable_level: Group::ALIAS_LEVELS[:everyone], users: [user, user_1, user_2, user_3])
+    Fabricate(
+      :group,
+      mentionable_level: Group::ALIAS_LEVELS[:everyone],
+      users: [user, user_1, user_2, user_3],
+    )
   end
 
-  fab!(:followed_channel) { Fabricate(:category_channel) }
+  fab!(:followed_channel, :category_channel)
   fab!(:job) { :user_email }
-  fab!(:args) { { type: :chat_summary, user_id: user.id, force_respect_seen_recently: true } }
+  fab!(:args) do
+    {
+      type: :chat_summary,
+      user_id: user.id,
+      to_address: user.email,
+      force_respect_seen_recently: true,
+    }
+  end
   let(:args_json) do
     {
-      "type" => "chat_summary",  # Use string instead of symbol
-      "user_id" => user.id,      # Integer is fine
-      "force_respect_seen_recently" => true # Boolean is fine
+      "type" => "chat_summary", # Use string instead of symbol
+      "user_id" => user.id, # Integer is fine
+      "force_respect_seen_recently" => true, # Boolean is fine
     }
   end
 
@@ -103,9 +114,9 @@ describe Chat::Mailer do
         expect_not_enqueued
       end
 
-      it "does not queue a chat summary email when user has chat email frequency = never" do
+      it "queues a chat summary email even when user has chat email frequency = never" do
         user.user_option.update!(chat_email_frequency: UserOption.chat_email_frequencies[:never])
-        expect_not_enqueued
+        expect_enqueued
       end
 
       it "does not queue a chat summary email when user has email level = never" do
@@ -204,6 +215,32 @@ describe Chat::Mailer do
 
       it "queues a chat summary email" do
         expect_not_enqueued
+      end
+    end
+
+    describe "with watched threads" do
+      let!(:chat_message) { create_message(followed_channel, "hello guys") }
+      let!(:thread) do
+        Fabricate(:chat_thread, channel: followed_channel, original_message: chat_message)
+      end
+
+      before do
+        Fabricate(
+          :user_chat_thread_membership,
+          user: user,
+          thread:,
+          notification_level: Chat::NotificationLevels.all[:watching],
+        )
+      end
+
+      it "queues a chat summary email" do
+        expect_enqueued
+      end
+
+      it "still queues a chat summary email when there is also an @all mention" do
+        create_message(followed_channel, "hello @all", Chat::AllMention)
+
+        expect_enqueued
       end
     end
   end

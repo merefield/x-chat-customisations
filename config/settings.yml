@@ -1,7 +1,7 @@
 plugins:
   x_chat_customisations_enabled:
     default: true
-    client: false
+    client: true
   x_chat_customisations_enhanced_logging:
     default: false
     client: false
@@ -16,3 +16,7 @@ plugins:
     type: category
     client: true
     default: 4
+  x_chat_customisations_default_chat_channel_id:
+    client: true
+    default: 0
+    max: 9223372036854775807

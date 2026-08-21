@@ -27,13 +27,18 @@ def make_seen(args)
   puts "-" * 50
   puts "Setting users seen for '#{RailsMultisite::ConnectionManagement.current_db}'"
 
-  limit = args[:limit]&.to_i || 10000
+  limit = args[:limit]&.to_i || 10_000
 
   puts "with a limit of #{limit} users" if limit.positive?
   puts "to a datetime of #{seen_default_datetime}"
   puts "-" * 50
 
-  updated_count = User.where(last_seen_at: nil).where("id > 0").limit(limit).update_all(last_seen_at: seen_default_datetime)
+  updated_count =
+    User
+      .where(last_seen_at: nil)
+      .where("id > 0")
+      .limit(limit)
+      .update_all(last_seen_at: seen_default_datetime)
 
   puts "Updated #{updated_count} users seen to '#{seen_default_datetime}'!"
 end
@@ -42,17 +47,22 @@ def make_unseen(args)
   puts "-" * 50
   puts "Setting forced users seen back to nil  for '#{RailsMultisite::ConnectionManagement.current_db}'"
 
-  limit = args[:limit]&.to_i || 10000
+  limit = args[:limit]&.to_i || 10_000
 
   puts "with a limit of #{limit} users" if limit.positive?
   puts "for those with a datetime of '#{seen_default_datetime}'"
   puts "-" * 50
 
-  updated_count = User.where(last_seen_at: seen_default_datetime).where("id > 0").limit(limit).update_all(last_seen_at: nil)
+  updated_count =
+    User
+      .where(last_seen_at: seen_default_datetime)
+      .where("id > 0")
+      .limit(limit)
+      .update_all(last_seen_at: nil)
 
   puts "Updated #{updated_count} users seen to nil!"
 end
 
 def seen_default_datetime
-  '2025-07-01 12:00:00'
+  "2025-07-01 12:00:00"
 end

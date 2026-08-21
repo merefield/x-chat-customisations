@@ -1,4 +1,27 @@
 en:
   js:
+    chat:
+      ignore_channel_wide_mention:
+        title: "Ignore @all channel-wide mentions"
+    user:
+      preferences_nav:
+        users: "DM Settings"
     x_chat_customisations:
       title: "Chat Customisations"
+      admin:
+        default_channel:
+          title: "Default channel"
+          description: "Choose the channel users land on when opening Chat on desktop."
+          channel: "Channel"
+          none: "No default channel"
+          saved: "Default channel saved"
+      notification_levels:
+        mention: "My Mentions + @all Posts"
+        explicit_mention: "Only For My Mentions (@%{username})"
+      posting_modes:
+        label: "Posting"
+        anyone: "Anyone can post"
+        staff_only: "Only staff can post"
+        staff_only_replies_allowed: "Only staff can post - replies allowed"
+      silent_member_adds:
+        label: "Add users silently"
